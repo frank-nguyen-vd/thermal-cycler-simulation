@@ -9,7 +9,8 @@ class  PCR_Machine:
                  heat_sink_temp, 
                  block_rate=0, 
                  sample_rate=0,
-                 update_period=0.2
+                 update_period=0.2,
+                 amb_temp=25
                 ):
         self.model = model
         self._sample_volume = sample_volume
@@ -19,6 +20,7 @@ class  PCR_Machine:
         self._block_rate = block_rate
         self._sample_rate = sample_rate
         self._update_period = update_period                
+        self._amb_temp = amb_temp
         self.calculate_conversion_constant(self._sample_volume)
         
     def calculate_conversion_constant(self, volume):
@@ -103,11 +105,16 @@ class  PCR_Machine:
         self._block_rate = (new_block_temp - self._block_temp) / self._update_period
         self._block_temp = new_block_temp
     
-    def update_heat_sink_params(self, delta_Tblock):        
+    def update_heat_sink_temp(self, delta_Tblock):        
         if delta_Tblock > 0: # block is heating up
-            self._heat_sink_temp -= 0.01 * delta_Tblock
+            # for peltier, when block is heated up, the heat sink is cooled down
+            self._heat_sink_temp -= 0.01 * delta_Tblock 
         else: # block is cooling down
+            # for peltier, when block is cooled down, the heat sink is heated up
             self._heat_sink_temp -= 0.05 * delta_Tblock
+
+        # heat sink temp is cooled by fan
+        self._heat_sink_temp -= 0.005 * (self._heat_sink_temp - self._amb_temp)
     
     def update(self, Iset, Imeasure):
         condition = [self._sample_volume,
