@@ -79,7 +79,7 @@ class  PCR_Machine:
     def sample_rate(self):        
         return self._sample_rate
     
-    @block_rate.setter
+    @sample_rate.setter
     def sample_rate(self, value):        
         self._sample_rate = value
         
