@@ -31,7 +31,7 @@ class  PCR_Machine:
             heat_const += heat_coeffs[i] * volume**i
             cool_const += cool_coeffs[i] * volume**i
         self.heat_conv = 1 - math.exp(-self.update_period / heat_const)
-        self.heat_conv = 1 - math.exp(-self.update_period / cool_const)
+        self.cool_conv = 1 - math.exp(-self.update_period / cool_const)
 
     @property
     def sample_volume(self):        
