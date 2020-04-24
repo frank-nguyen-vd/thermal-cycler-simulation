@@ -1,18 +1,20 @@
 class PID_Controller:
-    def __init__(self, pid_P, pid_I, pid_D, pid_KI, pid_KD, update_period):
-        self._P = pid_P
-        self._I = pid_I
-        self._D = pid_D
-        self._KI = pid_KI
-        self._KD = pid_KD
-        self._dt = update_period
-
+    def __init__(self):
+        self.reset()
+        
+    def reset(self):
         self._SP = 0
         self._PV = 0
+        self._P = 0
+        self._I = 0
+        self._D = 0
+        self._KI = 0
+        self._KD = 0
+        self._dt = 0
+        self._ffwd = 0
         self._m = 0
         self._y = 0
         self._b = 0
-        self._ffwd = 0
 
     def update_derivative(self):        
         self._y = self._y + self._dt * (self._PV - self._y) / (self._dt + self._D / self._KD)
