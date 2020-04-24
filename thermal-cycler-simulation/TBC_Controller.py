@@ -6,11 +6,15 @@ class TBC_Controller:
         self._time = start_time
         self._checkpoint = start_time        
         self._period = 1 / update_freq # update_freq in Hz, period in second
-        self._pid = PID_Controller()
-        pass
+        self._pid = PID_Controller()        
 
     def is_timer_fired(self):
         if (self._time - self._checkpoint) >= self._period:
             self._checkpoint = self._time
             return True
         return False
+
+    def update(self, tick):
+        self._time += tick
+        if self.is_timer_fired():
+            pass
