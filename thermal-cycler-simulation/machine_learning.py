@@ -4,7 +4,7 @@ from sklearn.tree import DecisionTreeRegressor
 
 class MachineLearning:
     def __init__(self):
-        self.accuracy_window = 0    
+        self.accuracy_window = 0.25    
         
     def set_accuracy_window(self, value):
         self.accuracy_window = value
