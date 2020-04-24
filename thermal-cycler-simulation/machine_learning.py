@@ -48,9 +48,12 @@ class MachineLearning:
 
 if __name__ == "__main__":
     learning = MachineLearning()
+    learning.set_accuracy_window(0.25)
+
     model = learning.train_model("train/pcr_training_set.csv")
-    learning.test_model(model, "test/pcr_testing_set.csv")
+    learning.test_model(model, "test/pcr_testing_set.csv", report=True)
     learning.save_model(model, "pcr_trained_model.ml")
+
     model = learning.train_model("train/peltier_training_set.csv")
-    learning.test_model(model, "test/peltier_testing_set.csv")
-    learning.save_model(model, "peltier_trained_model.ml")    
+    learning.test_model(model, "test/peltier_testing_set.csv", report=True)
+    learning.save_model(model, "peltier_trained_model.ml")
