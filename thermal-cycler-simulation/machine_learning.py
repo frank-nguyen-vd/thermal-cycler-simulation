@@ -1,6 +1,6 @@
 import pandas as pd
 import joblib
-from sklearn.tree import DecisionTreeRegressor
+from sklearn.neural_network import MLPRegressor
 
 class MachineLearning:
     def __init__(self):
@@ -19,8 +19,8 @@ class MachineLearning:
     def train_model(self, path):
         train_condition, train_result = self.load_data(path)
         # Training the model
-        model = DecisionTreeRegressor(random_state=0)
-        model.fit(train_condition, train_result)
+        model = MLPRegressor(random_state=0)
+        model = model.fit(train_condition, train_result)
 
         return model
     
