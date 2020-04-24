@@ -9,3 +9,8 @@ class TBC_Controller:
         self._pid = PID_Controller()
         pass
 
+    def is_timer_fired(self):
+        if (self._time - self._checkpoint) >= self._period:
+            self._checkpoint = self._time
+            return True
+        return False
