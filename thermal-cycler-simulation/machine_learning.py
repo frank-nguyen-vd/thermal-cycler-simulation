@@ -33,7 +33,8 @@ class MachineLearning:
         for i in range(0, total):
             if test_result[i] - self.accuracy_window <= test_prediction[i] <= test_result[i] + self.accuracy_window:
                 correct += 1
-        print(f"The accuracy of model is {(correct * 100 / total):.2f}")
+        value = round(correct * 100 / total, 2)
+        print("The accuracy of model is {}".format(value))
     
     def save_model(self, model, path):
         # save the model to disk        
