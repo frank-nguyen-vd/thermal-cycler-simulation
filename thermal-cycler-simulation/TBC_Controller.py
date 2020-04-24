@@ -14,6 +14,9 @@ class TBC_Controller:
             return True
         return False
 
+    def ramp_to(self, set_point, ramp_rate):
+        pass
+
     def update(self, tick):
         self._time += tick
         if self.is_timer_fired():
