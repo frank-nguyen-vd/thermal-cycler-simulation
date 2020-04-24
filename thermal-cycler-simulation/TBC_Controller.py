@@ -6,7 +6,19 @@ class TBC_Controller:
         self._time = start_time
         self._checkpoint = start_time        
         self._period = 1 / update_freq # update_freq in Hz, period in second
-        self._pid = PID_Controller()        
+    def init_pid(self):
+        self._pid = PID_Controller()
+        self._pid_const = {}
+        self._pid_const["Ramp Up"        ] = {"P": 3, "I": 0, "D": 0, "KI": 0, "KD": 0}
+        self._pid_const["Overshoot Over" ] = {"P": 3, "I": 0, "D": 0, "KI": 0, "KD": 0}
+        self._pid_const["Hold Over"      ] = {"P": 3, "I": 0, "D": 0, "KI": 0, "KD": 0}
+        self._pid_const["Land Over"      ] = {"P": 3, "I": 0, "D": 0, "KI": 0, "KD": 0}
+        self._pid_const["Ramp Down"      ] = {"P": 3, "I": 0, "D": 0, "KI": 0, "KD": 0}
+        self._pid_const["Overshoot Under"] = {"P": 3, "I": 0, "D": 0, "KI": 0, "KD": 0}
+        self._pid_const["Hold Under"     ] = {"P": 3, "I": 0, "D": 0, "KI": 0, "KD": 0}
+        self._pid_const["Land Under"     ] = {"P": 3, "I": 0, "D": 0, "KI": 0, "KD": 0}
+        self._pid_const["Hold"           ] = {"P": 3, "I": 0, "D": 0, "KI": 0, "KD": 0}
+
 
     def is_timer_fired(self):
         if (self._time - self._checkpoint) >= self._period:
