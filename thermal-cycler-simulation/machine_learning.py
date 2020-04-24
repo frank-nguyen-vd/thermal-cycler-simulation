@@ -18,23 +18,25 @@ class MachineLearning:
     
     def train_model(self, path):
         train_condition, train_result = self.load_data(path)
+
         # Training the model
         model = MLPRegressor(random_state=0)
         model = model.fit(train_condition, train_result)
 
         return model
     
-    def test_model(self, model, path):
+    def test_model(self, model, path, report=True):        
         test_condition, test_result = self.load_data(path)
         test_prediction = model.predict(test_condition)
-        window = 0.25
         total = len(test_prediction)
         correct = 0
         for i in range(0, total):
             if test_result[i] - self.accuracy_window <= test_prediction[i] <= test_result[i] + self.accuracy_window:
                 correct += 1
-        value = round(correct * 100 / total, 2)
-        print("The accuracy of model is {}".format(value))
+        accuracy = round(correct * 100 / total, 2)
+        if report:
+            print("Total = {} Correct = {} Accuracy = {}".format(total, correct, accuracy))
+        return accuracy
     
     def save_model(self, model, path):
         # save the model to disk        
