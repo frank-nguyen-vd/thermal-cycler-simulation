@@ -27,6 +27,24 @@ class TBC_Controller:
         return False
 
     def ramp_to(self, set_point, ramp_rate):
+    def ramp_to(self, new_set_point, sample_rate):
+        if self._set_point == new_set_point:
+            return
+        self._stage = "Ramp Up" if self._set_point < new_set_point else "Ramp Down"        
+        self._ramp_time = 0
+        self._ramp_dist = new_set_point - self._pcr.block_temp
+        self._set_point = new_set_point        
+        self._sample_rate = sample_rate if self._stage == "Ramp Up" else -sample_rate
+        self._block_rate = self.calc_block_rate()
+
+        self._pid.reset()
+        self._pid._SP = sample_rate
+        self._pid._ffwd = self.calc_feed_forward()
+        self._pid._P = self._pid_const[self._stage]["P"]
+        self._pid._I = self._pid_const[self._stage]["I"]
+        self._pid._D = self._pid_const[self._stage]["D"]
+        self._pid._KI = self._pid_const[self._stage]["KI"]
+        self._pid._KD = self._pid_const[self._stage]["KD"]
         pass
 
     def update(self, tick):
