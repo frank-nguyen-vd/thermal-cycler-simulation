@@ -2,11 +2,19 @@ from PID_Controller import PID_Controller
 from PCR_Machine import PCR_Machine
 
 class TBC_Controller:
-    def __init__(self, PCR_Machine, start_time=0, update_freq=20):
-        self._pcr_machine = PCR_Machine
+    def __init__(self, PCR_Machine, start_time=0, update_freq=20, set_point=25):
+        self._pcr = PCR_Machine
         self._time = start_time
         self._checkpoint = start_time        
         self._period = 1 / update_freq # update_freq in Hz, period in second
+        self._set_point = set_point
+        self._ramp_time = 0
+        self._ramp_dist = 0
+        self._sample_rate = 0 # sample ramp rate
+        self._block_rate = 0 # block ramp rate        
+        self._sample_approaching = False
+        self._stage = "Hold"     
+        self.init_pid()
     def init_pid(self):
         self._pid = PID_Controller()
         self._pid_const = {}
