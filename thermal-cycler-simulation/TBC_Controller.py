@@ -15,8 +15,11 @@ class TBC_Controller:
         self._sample_approaching = False
         self._stage = "Hold"     
         self.init_pid()
+    
     def init_pid(self):
         self._pid = PID_Controller()
+        self._pid2 = PID_Controller()
+
         self._pid_const = {}
         self._pid_const["Ramp Up"        ] = {"P": 3, "I": 0, "D": 0, "KI": 0, "KD": 0}
         self._pid_const["Overshoot Over" ] = {"P": 3, "I": 0, "D": 0, "KI": 0, "KD": 0}
