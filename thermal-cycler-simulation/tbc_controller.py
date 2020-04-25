@@ -1,5 +1,6 @@
 from pid_controller import PID_Controller
 from pcr_machine import PCR_Machine
+from peltier import Peltier
 
 class TBC_Controller:
     def __init__(self, PCR_Machine, start_time=0, update_freq=20, set_point=25):
@@ -14,7 +15,14 @@ class TBC_Controller:
         self._block_rate = 0 # block ramp rate        
         self._sample_approaching = False
         self._stage = "Hold"     
+        self._Iset = 0
+        self._Imeasure = 0
         self.init_pid()
+        self.init_peltier()
+    
+    def init_peltier(self):
+        self._peltier = Peltier()
+        self._peltier._mode = "heat"
     
     def init_pid(self):
         self._pid = PID_Controller()
@@ -42,22 +50,31 @@ class TBC_Controller:
         else:
             self._pid._PV = self._pcr.block_temp * 0.5
 
+    def run_control_stage(self):
+        pass
+
     def is_timer_fired(self):
         if (self._time - self._checkpoint) >= self._period:
             self._checkpoint = self._time
             return True
         return False
 
-    def ramp_to(self, set_point, ramp_rate):
+    def predict_block_rate(self):
+        if self._ramp_dist > 0:
+            self._ramp_time = self._ramp_dist / self._sample_rate
+
+    def calc_feed_forward(self):
+        return 0
+
     def ramp_to(self, new_set_point, sample_rate):
         if self._set_point == new_set_point:
             return
         self._stage = "Ramp Up" if self._set_point < new_set_point else "Ramp Down"        
-        self._ramp_time = 0
-        self._ramp_dist = new_set_point - self._pcr.block_temp
+        self._start_time = self._time
+        self._ramp_dist = new_set_point - self._pcr.sample_temp
         self._set_point = new_set_point        
         self._sample_rate = sample_rate if self._stage == "Ramp Up" else -sample_rate
-        self._block_rate = self.calc_block_rate()
+        self.predict_block_rate()
 
         self._pid.reset()
         self._pid._SP = sample_rate
@@ -67,6 +84,18 @@ class TBC_Controller:
         self._pid._D = self._pid_const[self._stage]["D"]
         self._pid._KI = self._pid_const[self._stage]["KI"]
         self._pid._KD = self._pid_const[self._stage]["KD"]
+
+    def calc_Iset(self):
+        self._Iset = self._peltier.calc_Iset(self._pid._m)
+
+    def calc_Imeasure(self):
+        self._Imeasure = self._peltier.calc_Imeasure(self, 
+                                                     self._pcr.heat_sink_temp,
+                                                     self._pcr.block_temp, 
+                                                     self._Iset
+                                                     )
+
+    def output(self):
         pass
  
     def update(self):
