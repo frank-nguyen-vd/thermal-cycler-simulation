@@ -46,8 +46,14 @@ class TBC_Controller:
         self._pid._KI = self._pid_const[self._stage]["KI"]
         self._pid._KD = self._pid_const[self._stage]["KD"]
         pass
-
-    def update(self, tick):
+ 
+    def update(self):
+        self.update_pid()
+        self.run_control_stage()
+        self.calc_Iset()
+        self.calc_Imeasure()
+        self.output()
+    
     def tick(self, tick):
         self._time += tick
         if self.is_timer_fired():
