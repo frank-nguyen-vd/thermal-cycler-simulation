@@ -51,7 +51,36 @@ class TBC_Controller:
             self._pid._PV = self._pcr.block_temp * 0.5
 
     def run_control_stage(self):
-        pass
+        if self._stage == "Ramp Up":
+            self.ctrl_ramp_up()
+
+        elif self._stage == "Overshoot Over":
+            self.ctrl_overshoot_over()
+
+        elif self._stage == "Hold Over":
+            self.ctrl_hold_over()
+
+        elif self._stage == "Land Over":
+            self.ctrl_land_over()
+
+        elif self._stage == "Ramp Down":
+            self.ctrl_ramp_down()
+
+        elif self._stage == "Overshoot Under":
+            self.ctrl_overshoot_under()
+
+        elif self._stage == "Overshoot Under":
+            self.ctrl_overshoot_under()
+
+        elif self._stage == "Hold Under":
+            self.ctrl_hold_under()
+
+        elif self._stage == "Land Under":
+            self.ctrl_land_under()
+
+        elif self._stage == "Hold":
+            self.ctrl_hold()
+
 
     def is_timer_fired(self):
         if (self._time - self._checkpoint) >= self._period:
