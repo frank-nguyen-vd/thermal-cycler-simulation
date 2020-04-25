@@ -28,6 +28,16 @@ class TBC_Controller:
         self._pid_const["Land Under"     ] = {"P": 3, "I": 0, "D": 0, "KI": 0, "KD": 0}
         self._pid_const["Hold"           ] = {"P": 3, "I": 0, "D": 0, "KI": 0, "KD": 0}
 
+    def update_pid_PV(self):
+        if self._stage == "Ramp Up" or self._stage == "Ramp Down":
+            self._pid._PV = self._pcr.sample_rate
+        elif self._stage == "Overshoot Over" or self._stage == "Overshoot Under":
+            self._pid._PV = self._pcr.sample_rate if self._sample_approaching else self._pcr.block_rate
+            self._pid2._PV = self._pcr.block_temp * 0.5
+        elif self._stage == "Land Over" or self._stage == "Land Under":
+            self._pid._PV = self._pcr.block_rate
+        else:
+            self._pid._PV = self._pcr.block_temp * 0.5
 
     def is_timer_fired(self):
         if (self._time - self._checkpoint) >= self._period:
@@ -57,7 +67,7 @@ class TBC_Controller:
         pass
  
     def update(self):
-        self.update_pid()
+        self.update_pid_PV()
         self.run_control_stage()
         self.calc_Iset()
         self.calc_Imeasure()
