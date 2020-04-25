@@ -27,13 +27,21 @@ class  PCR_Machine:
         heat_coeffs = [1.9017543860, 0.0604385965, -0.0000643860, 0.0000002982]
         cool_coeffs = [2.6573099415, 0.0906608187, -0.0006599415, 0.0000020760]     
         no_coeffs = len(heat_coeffs)
-        heat_const = 0
-        cool_const = 0        
+        self._heat_const = 0
+        self._cool_const = 0        
         for i in range(0, no_coeffs):
-            heat_const += heat_coeffs[i] * volume**i
-            cool_const += cool_coeffs[i] * volume**i
+            self._heat_const += heat_coeffs[i] * volume**i
+            self._cool_const += cool_coeffs[i] * volume**i
         self.heat_conv = 1 - math.exp(-self.update_period / heat_const)
         self.cool_conv = 1 - math.exp(-self.update_period / cool_const)
+
+    @property
+    def heat_const(self):
+        return self._heat_const
+
+    @property
+    def cool_const(self):
+        return self._cool_const
 
     @property
     def sample_volume(self):        
