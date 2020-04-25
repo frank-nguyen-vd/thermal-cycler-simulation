@@ -11,8 +11,8 @@ class TBC_Controller:
         self._set_point = set_point
         self._ramp_time = 0
         self._ramp_dist = 0
-        self._sample_rate = 0 # sample ramp rate
-        self._block_rate = 0 # block ramp rate        
+        self._assigned_sample_rate = 0 # sample ramp rate
+        self._assigned_block_rate = 0 # block ramp rate        
         self._sample_approaching = False
         self._stage = "Hold"     
         self._Iset = 0
