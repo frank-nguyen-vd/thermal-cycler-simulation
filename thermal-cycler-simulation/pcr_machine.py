@@ -13,127 +13,127 @@ class  PCR_Machine:
                  amb_temp=25
                 ):
         self.model = model
-        self._sample_volume = sample_volume
-        self._sample_temp = sample_temp
-        self._block_temp = block_temp
-        self._heat_sink_temp = heat_sink_temp
-        self._block_rate = block_rate
-        self._sample_rate = sample_rate
-        self._update_period = update_period                
-        self._amb_temp = amb_temp
-        self.calculate_conversion_constant(self._sample_volume)
+        self.sample_volume = sample_volume
+        self.sample_temp = sample_temp
+        self.block_temp = block_temp
+        self.heat_sink_temp = heat_sink_temp
+        self.block_rate = block_rate
+        self.sample_rate = sample_rate
+        self.update_period = update_period                
+        self.amb_temp = amb_temp
+        self.calculate_conversion_constant(self.sample_volume)
         
     def calculate_conversion_constant(self, volume):
         heat_coeffs = [1.9017543860, 0.0604385965, -0.0000643860, 0.0000002982]
         cool_coeffs = [2.6573099415, 0.0906608187, -0.0006599415, 0.0000020760]     
         no_coeffs = len(heat_coeffs)
-        self._heat_const = 0
-        self._cool_const = 0        
+        self.heat_const = 0
+        self.cool_const = 0        
         for i in range(0, no_coeffs):
-            self._heat_const += heat_coeffs[i] * volume**i
-            self._cool_const += cool_coeffs[i] * volume**i
-        self.heat_conv = 1 - math.exp(-self.update_period / heat_const)
-        self.cool_conv = 1 - math.exp(-self.update_period / cool_const)
+            self.heat_const += heat_coeffs[i] * volume**i
+            self.cool_const += cool_coeffs[i] * volume**i
+        self.heat_conv = 1 - math.exp(-self.update_period / self.heat_const)
+        self.cool_conv = 1 - math.exp(-self.update_period / self.cool_const)
 
     @property
     def heat_const(self):
-        return self._heat_const
+        return self.heat_const
 
     @property
     def cool_const(self):
-        return self._cool_const
+        return self.cool_const
 
     @property
     def sample_volume(self):        
-        return self._sample_volume
+        return self.sample_volume
     
     @sample_volume.setter
     def sample_volume(self, value):        
-        self._sample_volume = value  
+        self.sample_volume = value  
         
     @property
     def sample_temp(self):        
-        return self._sample_temp
+        return self.sample_temp
     
     @sample_temp.setter
     def sample_temp(self, value):        
-        self._sample_temp = value        
+        self.sample_temp = value        
         
     @property
     def block_temp(self):        
-        return self._block_temp
+        return self.block_temp
     
     @block_temp.setter
     def block_temp(self, value):        
-        self._block_temp = value
+        self.block_temp = value
 
     @property
     def heat_sink_temp(self):        
-        return self._heat_sink_temp
+        return self.heat_sink_temp
     
     @heat_sink_temp.setter
     def heat_sink_temp(self, value):        
-        self._heat_sink_temp = value        
+        self.heat_sink_temp = value        
         
     @property
     def block_rate(self):        
-        return self._block_rate
+        return self.block_rate
     
     @block_rate.setter
     def block_rate(self, value):        
-        self._block_rate = value
+        self.block_rate = value
         
     @property
     def sample_rate(self):        
-        return self._sample_rate
+        return self.sample_rate
     
     @sample_rate.setter
     def sample_rate(self, value):        
-        self._sample_rate = value
+        self.sample_rate = value
         
     @property
     def update_period(self):        
-        return self._update_period
+        return self.update_period
     
     @update_period.setter
     def update_period(self, value):        
-        self._update_period = value        
+        self.update_period = value        
         
     def update_sample_params(self, new_block_temp):
-        if new_block_temp > self._block_temp: # block is heating up
+        if new_block_temp > self.block_temp: # block is heating up
             conv_const = self.heat_conv
         else: # block is cooling down
             conv_const = self.cool_conv        
-        new_sample_temp = self._sample_temp + conv_const * (new_block_temp - self._sample_temp)            
-        self._sample_rate = (new_sample_temp - self._sample_temp) / self._update_period
-        self._sample_temp = new_sample_temp
+        new_sample_temp = self.sample_temp + conv_const * (new_block_temp - self.sample_temp)            
+        self.sample_rate = (new_sample_temp - self.sample_temp) / self.update_period
+        self.sample_temp = new_sample_temp
     
     
     def update_block_params(self, new_block_temp):
-        self._block_rate = (new_block_temp - self._block_temp) / self._update_period
-        self._block_temp = new_block_temp
+        self.block_rate = (new_block_temp - self.block_temp) / self.update_period
+        self.block_temp = new_block_temp
     
     def update_heat_sink_temp(self, delta_Tblock):        
         if delta_Tblock > 0: # block is heating up
             # for peltier, when block is heated up, the heat sink is cooled down
-            self._heat_sink_temp -= 0.01 * delta_Tblock 
+            self.heat_sink_temp -= 0.01 * delta_Tblock 
         else: # block is cooling down
             # for peltier, when block is cooled down, the heat sink is heated up
-            self._heat_sink_temp -= 0.05 * delta_Tblock
+            self.heat_sink_temp -= 0.05 * delta_Tblock
 
         # heat sink temp is cooled by fan
-        self._heat_sink_temp -= 0.005 * (self._heat_sink_temp - self._amb_temp)
+        self.heat_sink_temp -= 0.005 * (self.heat_sink_temp - self.amb_temp)
     
     def update(self, Iset, Imeasure):
-        condition = [self._sample_volume,
-                     self._update_period,
-                     self._heat_sink_temp,
-                     self._block_temp,
-                     self._block_rate,
+        condition = [self.sample_volume,
+                     self.update_period,
+                     self.heat_sink_temp,
+                     self.block_temp,
+                     self.block_rate,
                      Iset,
                      Imeasure
                     ]
         new_block_temp = self.model.predict(condition)
-        self.update_heat_sink_temp(new_block_temp - self._block_temp)
+        self.update_heat_sink_temp(new_block_temp - self.block_temp)
         self.update_sample_params(new_block_temp)        
         self.update_block_params(new_block_temp)
