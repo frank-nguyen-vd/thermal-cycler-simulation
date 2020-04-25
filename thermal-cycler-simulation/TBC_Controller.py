@@ -1,5 +1,5 @@
-from PID_Controller import PID_Controller
-from PCR_Machine import PCR_Machine
+from pid_controller import PID_Controller
+from pcr_machine import PCR_Machine
 
 class TBC_Controller:
     def __init__(self, PCR_Machine, start_time=0, update_freq=20, set_point=25):
