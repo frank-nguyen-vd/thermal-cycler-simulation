@@ -48,6 +48,7 @@ class TBC_Controller:
         pass
 
     def update(self, tick):
+    def tick(self, tick):
         self._time += tick
         if self.is_timer_fired():
-            pass
+            self.update()
