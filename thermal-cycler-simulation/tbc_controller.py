@@ -315,6 +315,11 @@ class TBC_Controller:
         self.pid.load(self.pid_const, "Land Over")
         self.stage = "Land Over"
 
+    def ctrl_hold_over(self):
+        self.qpid = self.qMaxHoldPid * self.pid.update() / 100
+        if self.pcr.sample_temp >= self.set_point - self.calcHeatSmpWin:
+            self.prepare_land_over()
+        self.peltier.mode = "heat"
 
     def run_control_stage(self):
         if self.stage == "Ramp Up":
