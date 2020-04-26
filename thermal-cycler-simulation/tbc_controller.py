@@ -310,6 +310,11 @@ class TBC_Controller:
         
         self.peltier.mode = "heat"
 
+    def prepare_land_over(self):
+        self.pid.reset()
+        self.pid.load(self.pid_const, "Land Over")
+        self.stage = "Land Over"
+
 
     def run_control_stage(self):
         if self.stage == "Ramp Up":
