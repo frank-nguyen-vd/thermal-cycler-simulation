@@ -144,6 +144,7 @@ class TBC_Controller:
         self.calcHeatBlkOS  = blkOS_const * self.maxHeatBlkOS
         self.calcHeatSmpWin = smpWin_const * self.maxHeatSmpWin
         self.calcHeatBlkWin = overshoot_rr_const * self.maxHeatBlkWin
+        self.smpWinInRampUpFlag = False
 
     def prepare_ramp_down(self):
         self.stage = "Ramp Down"                
