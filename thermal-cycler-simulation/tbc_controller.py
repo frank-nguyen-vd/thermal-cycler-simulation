@@ -115,8 +115,11 @@ class TBC_Controller:
         self.pid.y = self.pcr.block_temp * 0.5
         self.pid.ffwd = self.qHeatLoss / self.qMaxHoldPid * 100
 
-    def calcBlockRate(self):
-        return 0
+    def calcBlockRate(self, timeConst):
+        # assume ramp_time and ramp_dist are calculated before calling this function
+        if self.ramp_time == 0 or timeConst == 0:
+            return self.target_sample_rate
+        return self.ramp_dist / (self.ramp_time - timeConst * (1 - exp(-self.ramp_time / timeConst)))
 
     def prepare_ramp_up(self):
         self.stage = "Ramp Up"                
