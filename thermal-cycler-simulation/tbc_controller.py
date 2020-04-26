@@ -123,7 +123,7 @@ class TBC_Controller:
 
     def prepare_ramp_up(self):
         self.stage = "Ramp Up"                
-        self.ramp_time = self.ramp_dist / self.target_sample_rate
+        self.target_block_rate = self.calcBlockRate(self.heatTimeConst)
         self.target_block_rate = self.calcBlockRate()
 
         self.pid.load(self.pid_const, "Ramp Up")
@@ -154,7 +154,7 @@ class TBC_Controller:
 
     def prepare_ramp_down(self):
         self.stage = "Ramp Down"                
-        self.ramp_time = abs(self.ramp_dist / self.target_sample_rate) # ramp_time is postive
+        self.target_block_rate = self.calcBlockRate(self.coolTimeConst) # target_block_rate is negative
         self.target_block_rate = -abs(self.calcBlockRate()) # target_block_rate is negative
         self.target_sample_rate = -abs(self.target_sample_rate) # target_sample_rate is negative
 
