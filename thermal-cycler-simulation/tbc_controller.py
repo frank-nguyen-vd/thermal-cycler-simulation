@@ -19,6 +19,8 @@ class TBC_Controller:
         self.Imeasure = 0
         self.blockMCP = 0
         self.slow_upramp_qpid = 0
+        self.smoothRegionOverWin = 0
+        self.smoothRegionOverRR = 0
         self.maxHeatBlkOS = 0
         self.maxHeatSmpWin = 0
         self.maxHeatBlkWin = 0
@@ -320,6 +322,21 @@ class TBC_Controller:
         if self.pcr.sample_temp >= self.set_point - self.calcHeatSmpWin:
             self.prepare_land_over()
         self.peltier.mode = "heat"
+
+    def ctrl_land_over(self):
+        timeToSetPt = (self.set_point - self.pcr.sample_temp) / self.pcr.sample_rate
+        if timeToSetPt > 0:
+            self.pid.SP = (self.set_point - self.pcr.block_temp) / timeToSetPt
+        else:
+            self.pid.SP = -3
+        if self.pcr.block_temp - self.smoothRegionOverWin <= self.set_point:
+            if self.pid.SP < -self.smoothRegionOverRR:
+                self.pid.SP = -self.smoothRegionOverRR
+        self.pid.ffwd = self.pid.SP * self.blockMCP / self.qMaxRampPid * 100
+        self.qpid = -self.qMaxRampPid * self.pid.update() / 100
+        if self.pcr.block_temp - 0.25 <= self.set_point:
+            self.prepare_hold()
+        self.peltier.mode = "cool"
 
     def run_control_stage(self):
         if self.stage == "Ramp Up":
