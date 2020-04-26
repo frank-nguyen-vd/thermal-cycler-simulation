@@ -1,8 +1,5 @@
 class PID_Controller:
     def __init__(self):
-        self.reset()
-        
-    def reset(self):
         self.SP = 0
         self.PV = 0
         self.P = 0
@@ -11,6 +8,12 @@ class PID_Controller:
         self.KI = 0
         self.KD = 0
         self.dt = 0
+        self.ffwd = 0
+        self.m = 0
+        self.y = 0
+        self.b = 0
+        
+    def reset(self):
         self.ffwd = 0
         self.m = 0
         self.y = 0
