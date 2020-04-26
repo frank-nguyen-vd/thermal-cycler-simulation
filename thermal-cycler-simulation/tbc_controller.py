@@ -31,6 +31,8 @@ class TBC_Controller:
         self.calcCoolBlkOS = 0
         self.calcCoolBlkWin = 0
         self.calcCoolSmpWin = 0
+        self.heatSpCtrlActivRR = 0
+        self.heatSpCtrlActivSP = 0
         self.unachievable = 10
         self.max_ramp_dist = 35
         self.block_slow_rate = 0.5
@@ -256,6 +258,54 @@ class TBC_Controller:
         self.pid.ffwd = self.qHeatLoss / self.qMaxHoldPid * 100
         self.pid.load(self.pid_const, "Hold Over")
         self.stage = "Hold Over"
+
+
+    def ctrl_overshoot_over(self):
+        if not self.smpWinInRampUpFlag:
+            if self.pcr.sample_temp >= self.set_point - self.calcHeatSmpWin:
+                self.prepare_hold()
+                return
+
+            if self.calcHeatBlkOS >= self.calcHeatBlkWin:
+                tempSP = self.rampUpStageRate * exp(-self.heat_brake * (self.time_elapsed - self.rampUpStageRampTime) / self.calcHeatBlkOS)
+            else:
+                tempSP = self.rampUpStageRate * exp(-self.heat_brake * (self.time_elapsed - self.rampUpStageRampTime) / self.calcHeatBlkWin)
+        else:
+            if self.calcHeatSmpWin != 0:
+                tempSP = self.rampUpStageRate * exp(-self.heat_brake * (self.time_elapsed - self.rampUpStageRampTime) / self.calcHeatSmpWin)
+            else:
+                tempSP = 0
+            
+            if self.pcr.sample_temp >= self.set_point - 0.2 or self.pcr.block_temp > self.set_point:
+                tempSP = self.pid.b
+                temp_b = self.pid2.b
+                temp_ffwd = self.pid2.ffwd
+                temp_y = self.pid2.y
+                self.prepare_hold()
+                self.pid.b  = temp_b + tempSP
+                self.pid.m  = self.pid.b
+                self.pid.b -= temp_ffwd
+                self.pid.y  = temp_y
+            return
+        
+        self.pid.SP = tempSP
+        qPower = tempSP / self.rampUpStageRate * self.qMaxRampPid + (1 - tempSP / self.rampUpStageRate) * self.qMaxHoldPid
+        self.pid.ffwd = self.pid.SP * self.blockMCP / qPower * 100
+        self.qpid = qPower * self.pid.update() / 100
+
+        if self.pid.SP <= self.heatSpCtrlActivRR * self.rampUpStageRate \
+            or self.pid.SP <= self.heatSpCtrlActivSP:
+            if not self.spCtrlFirstActFlag:
+                self.pid2.y = self.pcr.block_temp * 0.5
+                self.spCtrlFirstActFlag = True
+            self.qpid += qPower * self.pid2.update() / 100
+
+        if self.pcr.block_temp >= self.set_point + self.calcHeatBlkOS \
+            or self.pcr.block_temp >= self.max_block_temp:
+
+            self.prepare_hold_over()
+        
+        self.peltier.mode = "heat"
 
 
     def run_control_stage(self):
