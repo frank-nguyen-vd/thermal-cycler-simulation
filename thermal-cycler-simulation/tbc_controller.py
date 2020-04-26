@@ -25,6 +25,8 @@ class TBC_Controller:
         self.maxCoolBlkOS = 0
         self.maxCoolSmpWin = 0
         self.maxCoolBlkWin = 0
+        self.heatTimeConst = 0
+        self.coolTimeConst = 0
         self.calcHeatBlkOS = 0
         self.calcHeatBlkWin = 0
         self.calcHeatSmpWin = 0
@@ -122,9 +124,8 @@ class TBC_Controller:
         return self.ramp_dist / (self.ramp_time - timeConst * (1 - exp(-self.ramp_time / timeConst)))
 
     def prepare_ramp_up(self):
-        self.stage = "Ramp Up"                
+        self.stage = "Ramp Up"        
         self.target_block_rate = self.calcBlockRate(self.heatTimeConst)
-        self.target_block_rate = self.calcBlockRate()
 
         self.pid.load(self.pid_const, "Ramp Up")
         self.pid.SP = self.target_sample_rate
@@ -153,10 +154,9 @@ class TBC_Controller:
         self.smpWinInRampUpFlag = False
 
     def prepare_ramp_down(self):
-        self.stage = "Ramp Down"                
+        self.stage = "Ramp Down"        
         self.target_block_rate = self.calcBlockRate(self.coolTimeConst) # target_block_rate is negative
-        self.target_block_rate = -abs(self.calcBlockRate()) # target_block_rate is negative
-        self.target_sample_rate = -abs(self.target_sample_rate) # target_sample_rate is negative
+        self.target_sample_rate *= -1 # target_sample_rate is negative
 
         self.pid.load(self.pid_const, "Ramp Down")
         self.pid.SP = self.target_sample_rate
@@ -363,14 +363,17 @@ class TBC_Controller:
         self.pid.reset()
         self.start_time = self.time
         self.time_elapsed = 0
-        self.ramp_dist = new_set_point - self.pcr.block_temp
-        self.set_point = new_set_point
-        self.target_sample_rate = sample_rate        
+        self.target_sample_rate = sample_rate # sample_rate must be positive
+        self.ramp_dist = new_set_point - self.pcr.block_temp # ramp_dist can be positive or negative
+        self.ramp_time = abs(self.ramp_dist / self.target_sample_rate) # ramp_time is postive
+        self.set_point = new_set_point        
 
         if self.ramp_dist > 2:
             self.prepare_ramp_up()
+
         elif self.ramp_dist < -2:
             self.prepare_ramp_down()
+
         else:
             self.prepare_hold()
 
