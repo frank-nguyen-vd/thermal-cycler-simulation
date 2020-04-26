@@ -123,7 +123,7 @@ class TBC_Controller:
         if self.pid.ffwd > 100:
             self.pid.ffwd = 100
 
-        overshoot_dt_const = self.ramp_dist / (self.max_ramp_dist - 2)
+        overshoot_dt_const = (self.ramp_dist - 2) / (self.max_ramp_dist - 2)
         overshoot_rr_const = 1 if self.target_sample_rate >= self.max_up_ramp else self.target_sample_rate / self.max_up_ramp
 
         if overshoot_dt_const > 1:
