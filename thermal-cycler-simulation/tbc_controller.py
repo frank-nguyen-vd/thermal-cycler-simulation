@@ -1,6 +1,7 @@
 from pid_controller import PID_Controller
 from pcr_machine import PCR_Machine
 from peltier import Peltier
+from math import exp
 
 class TBC_Controller:
     def __init__(self, PCR_Machine, start_time=0, update_freq=20, set_point=25):
