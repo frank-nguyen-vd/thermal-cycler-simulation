@@ -19,6 +19,13 @@ class PID_Controller:
         self.y = 0
         self.b = 0
 
+    def load(self, pid_const, stage):
+        self.P  = pid_const[stage]["P"]
+        self.I  = pid_const[stage]["I"]
+        self.D  = pid_const[stage]["D"]
+        self.KI = pid_const[stage]["KI"]
+        self.KD = pid_const[stage]["KD"]        
+
     def update_derivative(self):        
         self.y = self.y + self.dt * (self.PV - self.y) / (self.dt + self.D / self.KD)
 
