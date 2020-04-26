@@ -16,6 +16,11 @@ class TBC_Controller:
         self.stage = "Hold"     
         self.Iset = 0
         self.Imeasure = 0
+        self.blockMCP = 0
+        self.slow_upramp_qpid = 0
+        self.maxHeatBlkOS = 0
+        self.maxHeatSmpWin = 0
+        self.maxHeatBlkWin = 0
         self.calcHeatBlkOS = 0
         self.calcHeatBlkWin = 0
         self.calcHeatSmpWin = 0
@@ -23,6 +28,7 @@ class TBC_Controller:
         self.calcCoolBlkWin = 0
         self.calcCoolSmpWin = 0
         self.unachievable = 10
+        self.max_ramp_dist = 35
         self.block_slow_rate = 0.5
         self.sample_slow_rate = 0.2
         self.max_up_ramp = 0
@@ -97,6 +103,39 @@ class TBC_Controller:
 
     def prepare_hold(self):
         pass
+
+    def calcBlockRate(self):
+        return 0
+
+    def prepare_ramp_up(self):
+        self.stage = "Ramp Up"                
+        self.ramp_time = self.ramp_dist / self.target_sample_rate
+        self.target_block_rate = self.calcBlockRate()
+
+        self.pid.load(self.pid_const, "Ramp Up")
+        self.pid.SP = self.target_sample_rate
+        initial_qpid = self.blockMCP * self.target_block_rate
+        self.pid.ffwd = initial_qpid / self.qMaxRampPid * 100
+
+        if self.target_block_rate < self.block_slow_rate:
+            self.pid.ffwd = self.slow_upramp_qpid / self.qMaxRampPid * 100
+        
+        if self.pid.ffwd > 100:
+            self.pid.ffwd = 100
+
+        overshoot_dt_const = self.ramp_dist / (self.max_ramp_dist - 2)
+        overshoot_rr_const = 1 if self.target_sample_rate >= self.max_up_ramp else self.target_sample_rate / self.max_up_ramp
+
+        if overshoot_dt_const > 1:
+            blkOS_const = overshoot_rr_const
+            smpWin_const = overshoot_rr_const
+        else:
+            blkOS_const = overshoot_dt_const * overshoot_rr_const
+            smpWin_const = overshoot_dt_const * overshoot_rr_const
+
+        self.calcHeatBlkOS  = blkOS_const * self.maxHeatBlkOS
+        self.calcHeatSmpWin = smpWin_const * self.maxHeatSmpWin
+        self.calcHeatBlkWin = overshoot_rr_const * self.maxHeatBlkWin
 
     def ctrl_ramp_up(self):
         if self.pcr.block_temp < self.set_point \
@@ -206,21 +245,20 @@ class TBC_Controller:
     def ramp_to(self, new_set_point, sample_rate):
         if self.set_point == new_set_point:
             return
-        self.stage = "Ramp Up" if self.set_point < new_set_point else "Ramp Down"        
-        self.start_time = self.time
-        self.ramp_dist = new_set_point - self.pcr.sample_temp
-        self.set_point = new_set_point        
-        self.target_sample_rate = sample_rate if self.stage == "Ramp Up" else -sample_rate
-        self.estimate_block_rate()
-
+            
         self.pid.reset()
-        self.pid.SP = sample_rate
-        self.pid.ffwd = self.calc_feed_forward()
-        self.pid.P = self.pid_const[self.stage]["P"]
-        self.pid.I = self.pid_const[self.stage]["I"]
-        self.pid.D = self.pid_const[self.stage]["D"]
-        self.pid.KI = self.pid_const[self.stage]["KI"]
-        self.pid.KD = self.pid_const[self.stage]["KD"]
+        self.start_time = self.time
+        self.time_elapsed = 0
+        self.ramp_dist = new_set_point - self.pcr.block_temp
+        self.set_point = new_set_point
+        self.target_sample_rate = sample_rate        
+
+        if self.ramp_dist > 2:
+            self.prepare_ramp_up()
+        elif self.ramp_dist < -2:
+            self.prepare_ramp_down()
+        else:
+            self.prepare_hold()
 
     def calc_Iset(self):
         self.Iset = self.peltier.calc_Iset(self.pid.m)
