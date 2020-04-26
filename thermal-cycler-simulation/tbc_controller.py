@@ -240,6 +240,22 @@ class TBC_Controller:
 
         self.peltier.mode = "heat"
 
+    def prepare_hold_over(self):
+        if self.pcr.block_temp >= self.max_block_temp:
+            self.pid.SP = self.max_block_temp * 0.5
+        else:
+            self.pid.SP = (self.set_point + self.calcHeatBlkOS) * 0.5
+
+        if self.pid.SP > self.max_block_temp * 0.5:
+            self.pid.SP = self.max_block_temp * 0.5
+
+        self.pid.m = self.pid2.m
+        self.pid.b = self.pid2.b
+        self.pid.y = self.pid2.y
+        self.pid.ffwd = self.qHeatLoss / self.qMaxHoldPid * 100
+        self.pid.load(self.pid_const, "Hold Over")
+        self.stage = "Hold Over"
+
 
     def run_control_stage(self):
         if self.stage == "Ramp Up":
