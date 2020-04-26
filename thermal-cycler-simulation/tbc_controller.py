@@ -79,7 +79,21 @@ class TBC_Controller:
         self.ramp_dist = self.set_point - self.pcr.block_temp
 
     def prepare_overshoot_over(self):
-        pass
+        self.pid.reset()
+        self.pid.load(self.pid_const, "Overshoot Over")
+
+        self.pid2.reset()
+        self.pid2.load(self.pid_const, "Hold Over")        
+        if self.pcr.block_temp >= self.max_block_temp or self.set_point + self.calcHeatBlkOS >= self.max_block_temp:
+            self.pid2.SP = self.max_block_temp * 0.5
+        else:
+            self.pid2.SP = (self.set_point + self.calcHeatBlkOS) * 0.5
+        self.pid2.ffwd = self.qHeatLoss / self.qMaxRampPid * 100
+        self.pid2.y = self.pcr.block_temp * 0.5
+
+        self.stage = "Overshoot Over"
+        self.spCtrlFirstActFlag = False
+        self.rampUpStageRampTime = self.time_elapsed
 
     def prepare_hold(self):
         pass
