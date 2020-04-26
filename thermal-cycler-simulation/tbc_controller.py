@@ -55,13 +55,63 @@ class TBC_Controller:
         self.ramp_dist = self.set_point - self.pcr.block_temp
 
     def ctrl_ramp_up(self):
-        if self.pcr.block_temp < self.set_point
+        if self.pcr.block_temp < self.set_point \
             and self.pcr.block_temp + self.calcHeatBlkWin <= self.set_point + self.calcHeatBlkOS:
 
-            if (self.time_elapsed >= self.ramp_time)
-                self.pid.SP = self.max_rate
+            if self.time_elapsed >= self.ramp_time:
+                self.pid.SP = self.unachievable
             else:
                 self.pid.SP = (self.set_point - self.pcr.sample_temp) / (self.ramp_time - self.time_elapsed)
+
+            if self.pid.SP > 1.05 * self.target_sample_rate:
+                self.pid.SP = 1.05 * self.target_sample_rate
+
+            if self.target_block_rate <= self.block_slow_rate:
+                if self.target_sample_rate / self.max_up_ramp < 0.1:
+                    stash = self.pid.P
+                    factor = self.target_sample_rate / self.max_up_ramp * 10
+                    self.pid.P *= factor
+                    if self.pid.P < self.rampup_minP:
+                        self.pid.P = self.rampup_minP          
+                    self.qpid = self.max_qpid * self.pid.update() * 0.01
+                    self.pid.P = stash
+                else:
+                    self.qpid = self.max_qpid * self.pid.update() * 0.01
+                    
+            else:
+                self.qpid = self.max_qpid * self.pid.update() * 0.01
+
+        else: # block temp. has overshot the set point
+            if self.pcr.sample_rate <= self.sample_slow_rate:
+                self.prepare_hold()
+            else:
+                self.smpWinInRampUpFlag = False
+                overshoot_gap = self.set_point + self.calcHeatBlkOS - self.pcr.block_temp
+                if self.pcr.block_rate > self.pcr.sample_rate:
+                    time_to_maxOS = overshoot_gap / self.pcr.block_rate
+                    self.rampUpStageRate = self.pcr.block_rate
+                else:
+                    time_to_maxOS = overshoot_gap / self.pcr.sample_rate
+                    self.rampUpStageRate = self.pcr.sample_rate
+                if self.calcHeatBlkOS > self.calcHeatBlkWin:
+                    self.heat_brake = self.heat_brake_const * self.calcHeatBlkOS / time_to_maxOS
+                else:
+                    self.heat_brake = self.heat_brake_const * self.calcHeatBlkWin / time_to_maxOS
+
+                self.heat_brake = self.heat_brake_const * self.calcHeatBlkOS / time_to_maxOS
+                self.prepare_overshoot_over()
+
+        if self.pcr.sample_temp >= self.set_point - self.calcHeatSmpWin:
+            if self.pcr.sample_rate <= 0:
+                break
+
+            self.smpWinInRampUpFlag = True
+            time_to_setpoint = (self.set_point - self.pcr.sample_temp) / self.pcr.sample_rate
+            self.heat_brake = self.heat_brake_const * self.calcHeatSmpWin / time_to_setpoint
+            self.rampUpStageRate = self.pcr.sample_rate
+            self.prepare_overshoot_over()
+
+        self.peltier.mode = "heat"
 
 
     def run_control_stage(self):
