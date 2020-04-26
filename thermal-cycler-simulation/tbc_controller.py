@@ -105,7 +105,12 @@ class TBC_Controller:
         self.rampUpStageRampTime = self.time_elapsed
 
     def prepare_hold(self):
-        pass
+        self.stage = "Hold"
+        self.pid.reset()
+        self.pid.load(self.pid_const, "Hold")
+        self.pid.SP = self.set_point * 0.5
+        self.pid.y = self.pcr.block_temp * 0.5
+        self.pid.ffwd = self.qHeatLoss / self.qMaxHoldPid * 100
 
     def calcBlockRate(self):
         return 0
