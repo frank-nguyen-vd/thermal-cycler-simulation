@@ -21,6 +21,9 @@ class TBC_Controller:
         self.maxHeatBlkOS = 0
         self.maxHeatSmpWin = 0
         self.maxHeatBlkWin = 0
+        self.maxCoolBlkOS = 0
+        self.maxCoolSmpWin = 0
+        self.maxCoolBlkWin = 0
         self.calcHeatBlkOS = 0
         self.calcHeatBlkWin = 0
         self.calcHeatSmpWin = 0
@@ -136,6 +139,41 @@ class TBC_Controller:
         self.calcHeatBlkOS  = blkOS_const * self.maxHeatBlkOS
         self.calcHeatSmpWin = smpWin_const * self.maxHeatSmpWin
         self.calcHeatBlkWin = overshoot_rr_const * self.maxHeatBlkWin
+
+    def prepare_ramp_down(self):
+        self.stage = "Ramp Down"                
+        self.ramp_time = abs(self.ramp_dist / self.target_sample_rate) # ramp_time is postive
+        self.target_block_rate = -abs(self.calcBlockRate()) # target_block_rate is negative
+        self.target_sample_rate = -abs(self.target_sample_rate) # target_sample_rate is negative
+
+        self.pid.load(self.pid_const, "Ramp Down")
+        self.pid.SP = self.target_sample_rate
+
+        if abs(self.target_block_rate) < self.block_slow_rate:
+            initial_qpid = -self.blockMCP * self.block_slow_rate
+        else:
+            initial_qpid = self.blockMCP * self.target_block_rate
+
+        self.pid.ffwd = initial_qpid / self.qMaxRampPid * 100        
+        
+        if self.pid.ffwd < -100:
+            self.pid.ffwd = -100
+
+        overshoot_dt_const = (-self.ramp_dist - 2)/ (self.max_ramp_dist - 2)
+        if abs(self.target_sample_rate) <= self.max_down_ramp:
+            overshoot_rr_const = 1
+        else:
+            overshoot_rr_const = self.target_sample_rate / self.max_down_ramp
+
+        if overshoot_dt_const > 1:
+            blkOS_const = overshoot_rr_const            
+        else:
+            blkOS_const = overshoot_dt_const * overshoot_rr_const
+        smpWin_const = overshoot_dt_const * overshoot_rr_const            
+
+        self.calcCoolBlkOS  = blkOS_const * self.maxCoolBlkOS
+        self.calcCoolSmpWin = smpWin_const * self.maxCoolSmpWin
+        self.calcCoolBlkWin = overshoot_rr_const * self.maxCoolBlkWin        
 
     def ctrl_ramp_up(self):
         if self.pcr.block_temp < self.set_point \
