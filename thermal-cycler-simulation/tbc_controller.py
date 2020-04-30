@@ -443,6 +443,11 @@ class TBC_Controller:
             self.prepare_hold_under()
         self.peltier.mode = "cool"
 
+
+    def ctrl_hold(self):
+        self.qpid = self.qMaxHoldPid * self.pid.update() / 100
+        self.peltier.mod = "heat"
+
     def prepare_hold_under(self):
         self.pid.reset()
         self.pid.load(self.pid_const, "Hold Under")
