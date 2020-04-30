@@ -406,6 +406,17 @@ class TBC_Controller:
         self.pid2.y = self.pcr.block_temp * 0.5
         self.spCtrlFirstActFlag = False
 
+
+    def prepare_hold_under(self):
+        self.pid.reset()
+        self.pid.load(self.pid_const, "Hold Under")
+        self.pid.SP = (self.set_point - self.calcCoolBlkOS) * 0.5
+        self.pid.m = self.pid2.m
+        self.pid.b = self.pid2.b
+        self.pid.y = self.pid2.y
+        self.pid.ffwd = -self.qHeatLoss / self.qMaxHoldPid * 100        
+        self.stage = "Hold Under"        
+
     def run_control_stage(self):
         if self.stage == "Ramp Up":
             self.ctrl_ramp_up()
