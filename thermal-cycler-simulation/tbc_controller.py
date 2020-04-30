@@ -458,6 +458,12 @@ class TBC_Controller:
             self.prepare_hold()
         self.peltier.mode = "heat"
 
+    def ctrl_hold_under(self):
+        self.qpid = self.qMaxHoldPid * self.pid.update() / 100
+        if self.pcr.sample_temp <= self.set_point + self.calcCoolSmpWin:
+            self.prepare_land_under()
+        self.peltier.mode = "heat"
+
     def ctrl_hold(self):
         self.qpid = self.qMaxHoldPid * self.pid.update() / 100
         self.peltier.mod = "heat"
