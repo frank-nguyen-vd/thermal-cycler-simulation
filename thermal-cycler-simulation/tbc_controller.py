@@ -233,17 +233,16 @@ class TBC_Controller:
                 else:
                     self.heat_brake = self.heat_brake_const * self.calcHeatBlkWin / time_to_maxOS
 
-                self.heat_brake = self.heat_brake_const * self.calcHeatBlkOS / time_to_maxOS
                 self.prepare_overshoot_over()
 
         if self.pcr.sample_temp >= self.set_point - self.calcHeatSmpWin:
-            if self.pcr.sample_rate <= 0:
+            if self.pid.PV <= 0:
                 return
 
             self.smpWinInRampUpFlag = True
-            time_to_setpoint = (self.set_point - self.pcr.sample_temp) / self.pcr.sample_rate
+            time_to_setpoint = (self.set_point - self.pcr.sample_temp) / self.pid.PV
             self.heat_brake = self.heat_brake_const * self.calcHeatSmpWin / time_to_setpoint
-            self.rampUpStageRate = self.pcr.sample_rate
+            self.rampUpStageRate = self.pid.PV
             self.prepare_overshoot_over()
 
         self.peltier.mode = "heat"
