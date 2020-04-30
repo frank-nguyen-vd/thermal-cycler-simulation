@@ -406,6 +406,11 @@ class TBC_Controller:
         self.pid2.y = self.pcr.block_temp * 0.5
         self.spCtrlFirstActFlag = False
 
+    def prepare_land_under(self):
+        self.pid.reset()
+        self.pid.load(self.pid_const, "Land Under")
+        self.stage = "Land Under"
+
     def ctrl_overshoot_under(self):
         if self.smpWinInRampDownFlag == False:
             if self.calcCoolBlkOS >= self.calcCoolBlkWin:
