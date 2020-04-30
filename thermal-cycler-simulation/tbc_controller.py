@@ -406,6 +406,42 @@ class TBC_Controller:
         self.pid2.y = self.pcr.block_temp * 0.5
         self.spCtrlFirstActFlag = False
 
+    def ctrl_overshoot_under(self):
+        if self.smpWinInRampDownFlag == False:
+            if self.calcCoolBlkOS >= self.calcCoolBlkWin:
+                tempSP = self.rampDownStageRate * exp(-self.cool_brake / self.calcCoolBlkOS * (self.time_elapsed - self.rampDownStageRampTime))
+            else:
+                tempSP = self.rampDownStageRate * exp(-self.cool_brake / self.calcCoolBlkWin * (self.time_elapsed - self.rampDownStageRampTime))
+
+            if self.pcr.sample_temp <= self.set_point + self.calcCoolSmpWin:
+                self.prepare_land_under()
+                return
+
+        else:
+            if self.calcCoolSmpWin != 0:
+                tempSP = self.rampDownStageRate * exp(-self.cool_brake / self.calcCoolSmpWin *(self.time_elapsed - self.rampDownStageRampTime))
+            else:
+                tempSP = 0
+
+            if self.pcr.sample_temp <= self.set_point + 1:
+                self.prepare_hold()
+                self.pid.m = self.pid2.m
+                self.pid.b = self.pid2.b
+                self.pid.y = self.pid2.y
+                return
+        qPower = tempSP / self.rampDownStageRate * self.qMaxRampPid + (1 -tempSP / self.rampDownStageRate) * self.qMaxHoldPid
+        self.pid.SP = tempSP
+        self.pid.ffwd = self.pid.SP * self.blockMCP / qPower * 100
+        self.qpid = -qPower * self.pid.update() / 100
+        if self.pid.SP >= self.coolSpCtrlActivRR * self.rampDownStageRate \
+            or self.pid.SP >= self.coolSpCtrlActivSP:
+            if self.spCtrlFirstActFlag == False:
+                self.pid2.y = self.pcr.block_temp * 0.5
+                self.spCtrlFirstActFlag = True
+            self.qpid += -qPower * self.pid2.update() / 100
+        if self.pcr.block_temp <= self.set_point - self.calcCoolBlkOS:
+            self.prepare_hold_under()
+        self.peltier.mode = "cool"
 
     def prepare_hold_under(self):
         self.pid.reset()
