@@ -396,6 +396,15 @@ class TBC_Controller:
 
         self.peltier.mode = "cool"
 
+    def prepare_overshoot_under(self):
+        self.rampDownStageRampTime = self.time_elapsed
+        self.pid.load(self.pid_const, "Overshoot Under")
+        self.pid2.reset()
+        self.pid2.load(self.pid_const, "Hold Under")
+        self.pid2.SP = (self.set_point - self.calcCoolBlkOS) * 0.5
+        self.pid2.ffwd = -self.qHeatLoss / self.qMaxHoldPid * 100
+        self.pid2.y = self.pcr.block_temp * 0.5
+        self.spCtrlFirstActFlag = False
 
     def run_control_stage(self):
         if self.stage == "Ramp Up":
