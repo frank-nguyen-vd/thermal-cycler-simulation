@@ -4,61 +4,23 @@ from peltier import Peltier
 from math import exp
 
 class TBC_Controller:
-    def __init__(self, PCR_Machine, start_time=0, update_freq=20, set_point=25):
+    def __init__(self, PCR_Machine, start_time=0, update_freq=20, volume=10):
         self.pcr = PCR_Machine
-        self.time = start_time
-        self.checkpoint = start_time        
+        self.time = self.checkpoint = start_time              
         self.period = 1 / update_freq # update_freq in Hz, period in second
-        self.set_point = set_point
-        self.ramp_time = 0
-        self.ramp_dist = 0
-        self.target_sample_rate = 0 
-        self.sample_approaching = False
-        self.stage = "Hold"     
-        self.Iset = 0
-        self.Imeasure = 0
-        self.blockMCP = 0
-        self.slow_upramp_qpid = 0
-        self.smoothRegionOverWin = 0
-        self.smoothRegionOverRR = 0
-        self.maxHeatBlkOS = 0
-        self.maxHeatSmpWin = 0
-        self.maxHeatBlkWin = 0
-        self.maxCoolBlkOS = 0
-        self.maxCoolSmpWin = 0
-        self.maxCoolBlkWin = 0
-        self.heatTimeConst = 0
-        self.coolTimeConst = 0
-        self.calcHeatBlkOS = 0
-        self.calcHeatBlkWin = 0
-        self.calcHeatSmpWin = 0
-        self.calcCoolBlkOS = 0
-        self.calcCoolBlkWin = 0
-        self.calcCoolSmpWin = 0
-        self.heatSpCtrlActivRR = 0
-        self.heatSpCtrlActivSP = 0
-        self.unachievable = 10
-        self.max_ramp_dist = 35
-        self.block_slow_rate = 0.5
-        self.sample_slow_rate = 0.2
-        self.max_up_ramp = 0
-        self.max_down_ramp = 0
-        self.rampup_minP = 3
-        self.rampdown_minP = 3
-        self.max_qpid = 150
-        self.qpid = 0
-        self.target_block_rate = 0
-        self.target_sample_rate = 0
-        self.heat_brake_const = 0
-        self.heat_brake = 0
-        self.cool_brake_const = 0
-        self.cool_brake = 0
+        self.volume = volume
+        self.set_point = self.pcr.sample_temp
         self.max_block_temp = 109
-        self.qHeatLoss = 0
-        self.qMaxRampPid = 150
-        self.qMaxHoldPid = 40
+        self.max_ramp_dist = 35
+        self.unachievable = 10
         self.init_pid()
-        self.init_peltier()
+        self.init_peltier()        
+        self.load_tuning_params()
+        self.max_up_ramp = self.calc_poly_eqn(self.upRrEqn, self.volume)
+        self.max_down_ramp = self.calc_poly_eqn(self.downRrEqn, self.volume)
+    
+    def calc_poly_eqn(self, eqn, vol):
+        return sum([vol**deg * coeff for deg, coeff in enumerate(eqn)])
     
     def init_peltier(self):
         self.peltier = Peltier()
@@ -68,23 +30,131 @@ class TBC_Controller:
         self.pid = PID_Controller()
         self.pid2 = PID_Controller()
 
+    def load_tuning_params(self):
+        self.blockMCP = 10.962
+        self.upRrEqn = [
+            4.8440929020,
+           -0.0325607505,
+           -0.0001714895,
+            0.0000018869
+        ]
+        self.downRrEqn = [
+            3.7445968870,
+           -0.0309892434,
+            0.0001028925,
+           -0.0000001561
+        ]
         self.pid_const = {}
-        self.pid_const["Ramp Up"        ] = {"P": 3, "I": 0, "D": 0, "KI": 0, "KD": 0}
-        self.pid_const["Overshoot Over" ] = {"P": 3, "I": 0, "D": 0, "KI": 0, "KD": 0}
-        self.pid_const["Hold Over"      ] = {"P": 3, "I": 0, "D": 0, "KI": 0, "KD": 0}
-        self.pid_const["Land Over"      ] = {"P": 3, "I": 0, "D": 0, "KI": 0, "KD": 0}
-        self.pid_const["Ramp Down"      ] = {"P": 3, "I": 0, "D": 0, "KI": 0, "KD": 0}
-        self.pid_const["Overshoot Under"] = {"P": 3, "I": 0, "D": 0, "KI": 0, "KD": 0}
-        self.pid_const["Hold Under"     ] = {"P": 3, "I": 0, "D": 0, "KI": 0, "KD": 0}
-        self.pid_const["Land Under"     ] = {"P": 3, "I": 0, "D": 0, "KI": 0, "KD": 0}
-        self.pid_const["Hold"           ] = {"P": 3, "I": 0, "D": 0, "KI": 0, "KD": 0}
+        self.pid_const["Ramp Up"        ] = {
+            "P"  : 3, 
+            "I"  : 0.06, 
+            "D"  : 0.0001, 
+            "KI" : 10, 
+            "KD" : 5
+        }
+        self.pid_const["Overshoot Over" ] = {
+            "P"  : 7, 
+            "I"  : 0.05, 
+            "D"  : 0.0, 
+            "KI" : 2, 
+            "KD" : 5
+        }
+        self.pid_const["Hold Over"      ] = {
+            "P"  : 1, 
+            "I"  : 0.04, 
+            "D"  : 0.01, 
+            "KI" : 5, 
+            "KD" : 10
+        }
+        self.pid_const["Land Over"      ] = {
+            "P"  : 10, 
+            "I"  : 0.03, 
+            "D"  : 0.00, 
+            "KI" : 2, 
+            "KD" : 5
+        }
+        self.pid_const["Hold"           ] = {
+            "P"  : 0.9, 
+            "I"  : 0.04, 
+            "D"  : 0.01, 
+            "KI" : 5, 
+            "KD" : 10
+        }
+        self.pid_const["Ramp Down"      ] = {
+            "P"  : 3, 
+            "I"  : 0.06, 
+            "D"  : 0.0001, 
+            "KI" : 10, 
+            "KD" : 5
+        }
+        self.pid_const["Overshoot Under"] = {
+            "P"  : 7, 
+            "I"  : 0.05, 
+            "D"  : 0.00, 
+            "KI" : 2, 
+            "KD" : 5
+        }
+        self.pid_const["Hold Under"     ] = {
+            "P"  : 1, 
+            "I"  : 0.04, 
+            "D"  : 0.01, 
+            "KI" : 5, 
+            "KD" : 10
+        }
+        self.pid_const["Land Under"     ] = {
+            "P"  : 10, 
+            "I"  : 0.03, 
+            "D"  : 0.00, 
+            "KI" : 2, 
+            "KD" : 5
+        }
+        self.slow_upramp_qpid = -15
+        self.block_slow_rate = 0.5
+        self.sample_slow_rate = 0.0226
+        self.rampup_minP = 3
+        self.rampdown_minP = 3
+        self.smoothRegionOverRR = 1.6
+        self.smoothRegionUnderRR = 1.5
+        self.smoothRegionOverWin = 1.5
+        self.smoothRegionUnderWin = 1.75
+
+        if self.volume <= 5:
+            pass
+        elif self.volume <= 10:
+            self.maxHeatBlkOS       = 2.8
+            self.maxCoolBlkOS       = 3.4
+            self.maxHeatSmpWin      = 2
+            self.maxCoolSmpWin      = 2
+            self.qMaxHoldPid        = 40
+            self.qMaxRampPid        = 150
+            self.maxHeatIset        = 6.5
+            self.maxCoolIset        = 6.5
+            self.maxHeatBlkWin      = 4
+            self.maxCoolBlkWin      = 3
+            self.qHeatLoss          = 10
+            self.heat_brake_const   = 1.2
+            self.heatSpCtrlActivRR  = 0.2
+            self.heatSpCtrlActivSP  = 0.1
+            self.cool_brake_const   = 1.5
+            self.coolSpCtrlActivRR  = 0.3
+            self.coolSpCtrlActivSP  =-0.1
+        elif self.volume <= 30:
+            pass
+        elif self.volume <= 50:
+            pass
+        else:
+            pass
+
 
     def update_feedback(self):
         # update pid process variable (PV)
         if self.stage == "Ramp Up" or self.stage == "Ramp Down":
             self.pid.PV = self.pcr.sample_rate
         elif self.stage == "Overshoot Over" or self.stage == "Overshoot Under":
-            self.pid.PV = self.pcr.sample_rate if self.sample_approaching else self.pcr.block_rate
+            if self.smpWinInRampDownFlag or self.smpWinInRampUpFlag:
+                self.pid.PV = self.pcr.sample_rate
+            else:
+                self.pcr.block_rate
             self.pid2.PV = self.pcr.block_temp * 0.5
         elif self.stage == "Land Over" or self.stage == "Land Under":
             self.pid.PV = self.pcr.block_rate
@@ -127,7 +197,7 @@ class TBC_Controller:
 
     def prepare_ramp_up(self):
         self.stage = "Ramp Up"        
-        self.target_block_rate = self.calcBlockRate(self.heatTimeConst)
+        self.target_block_rate = self.calcBlockRate(self.pcr.heat_const)
 
         self.pid.load(self.pid_const, "Ramp Up")
         self.pid.SP = self.target_sample_rate
@@ -157,7 +227,7 @@ class TBC_Controller:
 
     def prepare_ramp_down(self):
         self.stage = "Ramp Down"        
-        self.target_block_rate = self.calcBlockRate(self.coolTimeConst) # target_block_rate is negative
+        self.target_block_rate = self.calcBlockRate(self.pcr.cool_const) # target_block_rate is negative
         self.target_sample_rate *= -1 # target_sample_rate is negative
 
         self.pid.load(self.pid_const, "Ramp Down")
@@ -208,13 +278,13 @@ class TBC_Controller:
                     self.pid.P *= factor
                     if self.pid.P < self.rampup_minP:
                         self.pid.P = self.rampup_minP          
-                    self.qpid = self.max_qpid * self.pid.update() * 0.01
+                    self.qpid = self.qMaxRampPid * self.pid.update() * 0.01
                     self.pid.P = stash
                 else:
-                    self.qpid = self.max_qpid * self.pid.update() * 0.01
+                    self.qpid = self.qMaxRampPid * self.pid.update() * 0.01
 
             else:
-                self.qpid = self.max_qpid * self.pid.update() * 0.01
+                self.qpid = self.qMaxRampPid * self.pid.update() * 0.01
 
         else: # block temp. has overshot the set point
             if self.pcr.sample_rate <= self.sample_slow_rate:
@@ -356,13 +426,13 @@ class TBC_Controller:
                     self.pid.P *= factor
                     if self.pid.P < self.rampdown_minP:
                         self.pid.P = self.rampdown_minP          
-                    self.qpid = -self.max_qpid * self.pid.update() * 0.01
+                    self.qpid = -self.qMaxRampPid * self.pid.update() * 0.01
                     self.pid.P = stash
                 else:
-                    self.qpid = -self.max_qpid * self.pid.update() * 0.01
+                    self.qpid = -self.qMaxRampPid * self.pid.update() * 0.01
 
             else:
-                self.qpid = -self.max_qpid * self.pid.update() * 0.01
+                self.qpid = -self.qMaxRampPid * self.pid.update() * 0.01
 
         else: # block temp. has overshot the set point
             if self.pcr.sample_rate >= -self.sample_slow_rate:
