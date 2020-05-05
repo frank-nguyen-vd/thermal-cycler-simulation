@@ -65,7 +65,7 @@ class  PCR_Machine:
             self.heat_sink_temp -= 0.01 * delta_Tblock 
         else: # block is cooling down
             # for peltier, when block is cooled down, the heat sink is heated up
-            self.heat_sink_temp -= 0.05 * delta_Tblock
+            self.heat_sink_temp -= 0.1 * delta_Tblock
 
         # heat sink temp is cooled by fan
         self.heat_sink_temp -= 0.005 * (self.heat_sink_temp - self.amb_temp)
