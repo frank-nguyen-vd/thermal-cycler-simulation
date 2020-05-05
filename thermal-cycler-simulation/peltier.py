@@ -39,14 +39,14 @@ class Peltier:
              4.90E-05,
             -0.0051499
         ]
-        self.stage = "heat"
+        self.mode = "heat"
         self.model = self.load_model("peltier_trained_model.ml")
 
     def load_model(self, path):
         return joblib.load(path)
 
     def output(self, qpid, heat_sink_temp, block_temp, max_heat_current, max_cool_current):
-        if self.stage == "heat":
+        if self.mode == "heat":
             dT = block_temp - heat_sink_temp
             Iset =  self.QH[0] \
                     + self.QH[1] * block_temp \
@@ -59,7 +59,7 @@ class Peltier:
                     + self.QH[8] * block_temp * qpid \
                     + self.QH[9] * block_temp * dT
 
-        elif self.stage == "cool":
+        elif self.mode == "cool":
             dT = heat_sink_temp - block_temp
             A = self.QC[3]
             B = self.QC[2] + self.QC[7] * heat_sink_temp + self.QC[9] * dT
