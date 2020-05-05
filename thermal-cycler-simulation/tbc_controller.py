@@ -619,24 +619,18 @@ class TBC_Controller:
         else:
             self.prepare_hold()
 
-    def calc_Iset(self):
-        self.Iset = self.peltier.calc_Iset(self.pid.m)
-
-    def calc_Imeasure(self):
-        self.Imeasure = self.peltier.calc_Imeasure(self, 
-                                                     self.pcr.heat_sink_temp,
-                                                     self.pcr.block_temp, 
-                                                     self.Iset
-                                                     )
-
     def output(self):
-        pass
+        Iset, Imeasure = self.peltier.output( self.pid.m, 
+                                                        self.pcr.heat_sink_temp,
+                                                        self.pcr.block_temp,
+                                                        self.maxHeatIset,
+                                                        self.maxCoolIset
+        )
+        self.pcr.update(Iset, Imeasure)
  
     def update(self):
         self.update_feedback()
         self.run_control_stage()
-        self.calc_Iset()
-        self.calc_Imeasure()
         self.output()
     
     def tick(self, tick):
