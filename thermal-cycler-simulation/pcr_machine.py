@@ -79,7 +79,7 @@ class  PCR_Machine:
                      self.Iset,
                      self.Imeasure
                     ]
-        new_block_temp = self.model.predict(condition)
+        new_block_temp = self.model.predict([condition])[0]
         self.update_heat_sink_temp(new_block_temp - self.block_temp)
         self.update_sample_params(new_block_temp)        
         self.update_block_params(new_block_temp)

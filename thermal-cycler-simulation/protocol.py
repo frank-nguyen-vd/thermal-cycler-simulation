@@ -7,7 +7,7 @@ class Protocol:
         self.time = 0
         self.checkpoint = 0
         self.period = 0.2
-        self.dt = 0.008        
+        self.dt = 0.2        
         self.listSP = listSP
         self.listRate = listRate
         self.listHold = listHold
@@ -20,13 +20,13 @@ class Protocol:
                                         block_rate=0,
                                         sample_rate=0,                                        
                                         amb_temp=25,
-                                        update_period=0.008,
+                                        update_period=self.period,
                                         start_time=0
                                         
         )
         self.tbc_controller = TBC_Controller(self.pcr_machine,
                                             start_time=0,
-                                            update_period=0.008,
+                                            update_period=self.period,
                                             volume=10
         )
         self.protocolData = pd.DataFrame(columns=["Epoch Time", 

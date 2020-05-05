@@ -13,6 +13,8 @@ class TBC_Controller:
         self.max_block_temp = 109
         self.max_ramp_dist = 35
         self.unachievable = 10
+        self.smpWinInRampUpFlag = False
+        self.smpWinInRampDownFlag = False
         self.init_pid()
         self.init_peltier()        
         self.load_tuning_params()
@@ -196,7 +198,7 @@ class TBC_Controller:
         return self.ramp_dist / (self.ramp_time - timeConst * (1 - exp(-self.ramp_time / timeConst)))
 
     def prepare_ramp_up(self):
-        self.stage = "Ramp Up"        
+        self.stage = "Ramp Up"    
         self.target_block_rate = self.calcBlockRate(self.pcr.heat_const)
 
         self.pid.load(self.pid_const, "Ramp Up")
@@ -606,6 +608,8 @@ class TBC_Controller:
         self.time_elapsed = 0        
         self.ramp_dist = new_set_point - self.pcr.block_temp        
         self.set_point = new_set_point        
+        self.smpWinInRampUpFlag = False
+        self.smpWinInRampDownFlag = False
 
         if self.ramp_dist > 2:
             self.target_sample_rate = sample_rate / 100 * self.max_up_ramp
@@ -622,10 +626,10 @@ class TBC_Controller:
 
     def output(self):
         Iset, Imeasure = self.peltier.output( self.pid.m, 
-                                                        self.pcr.heat_sink_temp,
-                                                        self.pcr.block_temp,
-                                                        self.maxHeatIset,
-                                                        self.maxCoolIset
+                                            self.pcr.heat_sink_temp,
+                                            self.pcr.block_temp,
+                                            self.maxHeatIset,
+                                            self.maxCoolIset
         )
         self.pcr.Iset = Iset
         self.pcr.Imeasure = Imeasure

@@ -80,5 +80,5 @@ class Peltier:
             Iset = max_heat_current
         elif Iset < -max_cool_current:
             Iset = -max_cool_current      
-        Imeasure = self.model.predict([heat_sink_temp, block_temp, Iset])[0]
+        Imeasure = self.model.predict([[heat_sink_temp, block_temp, Iset]])[0]
         return Iset, Imeasure
