@@ -406,7 +406,7 @@ class TBC_Controller:
             if self.pid.SP < -self.smoothRegionOverRR:
                 self.pid.SP = -self.smoothRegionOverRR
         self.pid.ffwd = self.pid.SP * self.blockMCP / self.qMaxRampPid * 100
-        self.qpid = -self.qMaxRampPid * self.pid.update() / 100
+        self.qpid = self.qMaxRampPid * self.pid.update() / 100
         if self.pcr.block_temp - 0.25 <= self.set_point:
             self.prepare_hold()
         self.peltier.mode = "cool"
