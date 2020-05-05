@@ -30,7 +30,9 @@ class TBC_Controller:
     
     def init_pid(self):
         self.pid = PID_Controller()
+        self.pid.dt = self.period
         self.pid2 = PID_Controller()
+        self.pid2.dt = self.period
 
     def load_tuning_params(self):
         self.blockMCP = 10.962
@@ -625,7 +627,7 @@ class TBC_Controller:
             self.prepare_hold()
 
     def output(self):
-        Iset, Imeasure = self.peltier.output( self.pid.m, 
+        Iset, Imeasure = self.peltier.output( self.qpid, 
                                             self.pcr.heat_sink_temp,
                                             self.pcr.block_temp,
                                             self.maxHeatIset,
