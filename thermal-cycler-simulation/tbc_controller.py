@@ -4,10 +4,10 @@ from peltier import Peltier
 from math import exp
 
 class TBC_Controller:
-    def __init__(self, PCR_Machine, start_time=0, update_freq=20, volume=10):
+    def __init__(self, PCR_Machine, start_time=0, update_period=0.2, volume=10):
         self.pcr = PCR_Machine
         self.time = self.checkpoint = start_time              
-        self.period = 1 / update_freq # update_freq in Hz, period in second
+        self.period = update_period
         self.volume = volume
         self.set_point = self.pcr.sample_temp
         self.max_block_temp = 109
@@ -584,7 +584,6 @@ class TBC_Controller:
         elif self.stage == "Hold":
             self.ctrl_hold()
 
-
     def is_timer_fired(self):
         if (self.time - self.checkpoint) >= self.period:
             self.checkpoint = self.time
@@ -604,16 +603,18 @@ class TBC_Controller:
             
         self.pid.reset()
         self.start_time = self.time
-        self.time_elapsed = 0
-        self.target_sample_rate = sample_rate # sample_rate must be positive
-        self.ramp_dist = new_set_point - self.pcr.block_temp # ramp_dist can be positive or negative
-        self.ramp_time = abs(self.ramp_dist / self.target_sample_rate) # ramp_time is postive
+        self.time_elapsed = 0        
+        self.ramp_dist = new_set_point - self.pcr.block_temp        
         self.set_point = new_set_point        
 
         if self.ramp_dist > 2:
+            self.target_sample_rate = sample_rate / 100 * self.max_up_ramp
+            self.ramp_time = abs(self.ramp_dist / self.target_sample_rate) # ramp_time is postive
             self.prepare_ramp_up()
 
         elif self.ramp_dist < -2:
+            self.target_sample_rate = sample_rate / 100 * self.max_down_ramp
+            self.ramp_time = abs(self.ramp_dist / self.target_sample_rate) # ramp_time is postive
             self.prepare_ramp_down()
 
         else:
@@ -626,7 +627,8 @@ class TBC_Controller:
                                                         self.maxHeatIset,
                                                         self.maxCoolIset
         )
-        self.pcr.update(Iset, Imeasure)
+        self.pcr.Iset = Iset
+        self.pcr.Imeasure = Imeasure
  
     def update(self):
         self.update_feedback()
