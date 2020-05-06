@@ -479,6 +479,7 @@ class TBC_Controller:
         self.pid2.ffwd = -self.qHeatLoss / self.qMaxHoldPid * 100
         self.pid2.y = self.pcr.block_temp * 0.5
         self.spCtrlFirstActFlag = False
+        self.stage = "Overshoot Under"
 
     def prepare_land_under(self):
         self.pid.reset()
