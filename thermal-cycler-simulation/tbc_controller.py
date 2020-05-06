@@ -546,7 +546,7 @@ class TBC_Controller:
 
     def ctrl_hold(self):
         self.qpid = self.qMaxHoldPid * self.pid.update() / 100
-        self.peltier.mod = "heat"
+        self.peltier.mode = "heat"
 
     def prepare_hold_under(self):
         self.pid.reset()
