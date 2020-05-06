@@ -20,9 +20,12 @@ class MachineLearning:
         train_condition, train_result = self.load_data(path)
 
         # Training the model
-        model = MLPRegressor(hidden_layer_sizes=(100,50,10), activation='logistic', solver='adam', max_iter=500)
+        model = MLPRegressor(hidden_layer_sizes=(8,8,8,8,8,8,8,8,8,8,8,),
+                             activation='relu',
+                             solver='adam',
+                             verbose=True,
+                             max_iter=100)
         model = model.fit(train_condition, train_result)
-
         return model
     
     def test_model(self, model, path, report=True):        
