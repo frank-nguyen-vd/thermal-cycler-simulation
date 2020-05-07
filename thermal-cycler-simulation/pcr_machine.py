@@ -54,11 +54,6 @@ class  PCR_Machine:
         self.sample_rate = (new_sample_temp - self.sample_temp) / self.period
         self.sample_temp = new_sample_temp
     
-    
-    def update_block_params(self, new_block_temp):
-        self.block_rate = (new_block_temp - self.block_temp) / self.period
-        self.block_temp = new_block_temp
-    
     def update_heat_sink_temp(self, new_block_temp):
         delta_Tblock = abs(new_block_temp - self.block_temp)
         if delta_Tblock > 0: # block is heating up
@@ -73,21 +68,21 @@ class  PCR_Machine:
         self.heat_sink_temp -= 0.007 * (self.heat_sink_temp - self.amb_temp)
     
     def update(self):
-        condition = [self.sample_volume,
-                     self.period,
+        condition = [self.sample_volume,                     
                      self.heat_sink_temp,
                      self.block_temp,
                      self.block_rate,
                      self.Iset,
                      self.Imeasure
                     ]
-        new_block_temp = self.model.predict([condition])[0]
+        self.block_rate = self.model.predict([condition])[0]
+        new_block_temp = self.block_temp + self.block_rate * self.period
         self.update_heat_sink_temp(new_block_temp)
-        self.update_sample_params(new_block_temp)        
-        self.update_block_params(new_block_temp)
+        self.update_sample_params(new_block_temp)
+        self.block_temp = new_block_temp
 
     def is_timer_fired(self):
-        if (self.time - self.checkpoint) >= self.period:
+        if round(self.time - self.checkpoint, 3) >= self.period:
             self.checkpoint = self.time
             return True
         return False

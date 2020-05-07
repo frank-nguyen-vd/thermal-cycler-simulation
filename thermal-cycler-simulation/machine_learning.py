@@ -16,15 +16,23 @@ class MachineLearning:
     
         return condition, result
     
-    def train_model(self, path):
+    def train_model(self, path, mod):
         train_condition, train_result = self.load_data(path)
 
         # Training the model
-        model = MLPRegressor(hidden_layer_sizes=(100,),
-                             activation='relu',
-                             solver='adam',
-                             verbose=True,
-                             max_iter=100)
+        if mod == "pcr":
+            model = MLPRegressor(hidden_layer_sizes=(100,100,100,),
+                                activation='relu',
+                                solver='adam',
+                                verbose=True,
+                                max_iter=100)
+        elif mod == "peltier":
+            model = MLPRegressor(hidden_layer_sizes=(100,),
+                                activation='relu',
+                                solver='adam',
+                                verbose=True,
+                                max_iter=100)
+
         model = model.fit(train_condition, train_result)
         return model
     
@@ -53,10 +61,10 @@ if __name__ == "__main__":
     learning = MachineLearning()
     learning.set_accuracy_window(0.25)
 
-    model = learning.train_model("train/pcr_training_set.csv")
+    model = learning.train_model("train/pcr_training_set.csv", mod="pcr")
     learning.test_model(model, "test/pcr_testing_set.csv", report=True)
     learning.save_model(model, "pcr_trained_model.ml")
 
-    model = learning.train_model("train/peltier_training_set.csv")
+    model = learning.train_model("train/peltier_training_set.csv", mod="peltier")
     learning.test_model(model, "test/peltier_testing_set.csv", report=True)
     learning.save_model(model, "peltier_trained_model.ml")

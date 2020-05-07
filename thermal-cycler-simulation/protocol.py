@@ -7,7 +7,7 @@ class Protocol:
         self.time = 0
         self.checkpoint = 0
         self.period = 0.2
-        self.dt = 0.2        
+        self.dt = 0.008        
         self.listSP = listSP
         self.listRate = listRate
         self.listHold = listHold
@@ -20,13 +20,13 @@ class Protocol:
                                         block_rate=0,
                                         sample_rate=0,                                        
                                         amb_temp=25,
-                                        update_period=self.period,
+                                        update_period=self.dt,
                                         start_time=0
                                         
         )
         self.tbc_controller = TBC_Controller(self.pcr_machine,
                                             start_time=0,
-                                            update_period=self.period,
+                                            update_period=self.dt,
                                             volume=10
         )
         self.protocolData = pd.DataFrame(columns=["Epoch Time", 
@@ -53,13 +53,16 @@ class Protocol:
             "Imeasure"      :   self.pcr_machine.Imeasure,
             "Control Stage" :   self.tbc_controller.stage,
             "PID SP"        :   self.tbc_controller.pid.SP,
-            "PID PV"        :   self.tbc_controller.pid.PV
+            "PID PV"        :   self.tbc_controller.pid.PV,
+            "PID2 SP"       :   self.tbc_controller.pid2.SP,
+            "PID2 PV"       :   self.tbc_controller.pid2.PV
+
         }
         self.protocolData = self.protocolData.append(data, ignore_index=True)
 
-    def tick(self):
-        self.time += self.dt
-        if self.time - self.checkpoint >= self.period:
+    def tick(self, dt):
+        self.time += dt
+        if round(self.time - self.checkpoint, 3) >= self.period:
             self.record()
             self.checkpoint = self.time
 
@@ -67,19 +70,19 @@ class Protocol:
         for i in range(0, self.nCycles):
             for setpoint, rate, hold_time in zip(self.listSP, self.listRate, self.listHold):
                 self.tbc_controller.ramp_to(setpoint, rate)
-                while abs(self.pcr_machine.sample_temp - setpoint) > 1:
-                    self.pcr_machine.tick(self.dt)
+                while abs(self.pcr_machine.sample_temp - setpoint) > 1:                    
                     self.tbc_controller.tick(self.dt)
-                    self.tick()
+                    self.pcr_machine.tick(self.dt)
+                    self.tick(self.dt)
                 hold = 0
-                while hold < hold_time:
-                    self.pcr_machine.tick(self.dt)
+                while hold < hold_time:                    
                     self.tbc_controller.tick(self.dt)
+                    self.pcr_machine.tick(self.dt)
                     hold += self.dt
-                    self.tick()
+                    self.tick(self.dt)
         self.protocolData.to_csv("protocol.csv", index=False)
 
 if __name__ == "__main__":
-    protocol = Protocol([60,95], [100, 100], [35, 35], 6)
+    protocol = Protocol([95,60], [100, 100], [35, 35], 6)
     protocol.run()
 
