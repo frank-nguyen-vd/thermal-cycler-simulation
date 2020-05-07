@@ -53,7 +53,10 @@ class Protocol:
             "Imeasure"      :   self.pcr_machine.Imeasure,
             "Control Stage" :   self.tbc_controller.stage,
             "PID SP"        :   self.tbc_controller.pid.SP,
-            "PID PV"        :   self.tbc_controller.pid.PV
+            "PID PV"        :   self.tbc_controller.pid.PV,
+            "PID2 SP"       :   self.tbc_controller.pid2.SP,
+            "PID2 PV"       :   self.tbc_controller.pid2.PV
+
         }
         self.protocolData = self.protocolData.append(data, ignore_index=True)
 
