@@ -45,7 +45,7 @@ class Peltier:
     def load_model(self, path):
         return joblib.load(path)
 
-    def output(self, qpid, heat_sink_temp, block_temp, max_heat_current, max_cool_current):
+    def calculate_Iset(self, qpid, heat_sink_temp, block_temp, max_heat_current, max_cool_current):
         if self.mode == "heat":
             dT = block_temp - heat_sink_temp
             Iset =  self.QH[0] \
@@ -75,12 +75,12 @@ class Peltier:
             else:
                 Iset = (-B + sqrt(B*B - 4*A*C)) / (A + A)
         else:
-            pass
+            raise Exception
         if Iset > max_heat_current:
             Iset = max_heat_current
         elif Iset < -max_cool_current:
-            Iset = -max_cool_current      
-        Imeasure = self.model.predict([[heat_sink_temp, block_temp, Iset]])[0]
+            Iset = -max_cool_current
+        return Iset
 
     def calculate_Vset(self, heat_sink_temp, block_temp, Iset):
         I2set = Iset * Iset
