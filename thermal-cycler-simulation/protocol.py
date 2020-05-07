@@ -90,6 +90,12 @@ class Protocol:
         self.protocolData.to_csv("protocol.csv", index=False)
 
 if __name__ == "__main__":
-    protocol = Protocol([95,60], [50, 50], [35, 35], 1, Tblock=60, Tamb=25)
+    protocol = Protocol(listSP   =[ 95,  60], 
+                        listRate =[ 50,  50], 
+                        listHold =[100, 100], 
+                        nCycles  =2, 
+                        Tblock   =60, 
+                        Tamb     =25
+                        )
     protocol.run()
 
