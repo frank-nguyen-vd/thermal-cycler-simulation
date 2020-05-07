@@ -82,7 +82,7 @@ class  PCR_Machine:
         self.block_temp = new_block_temp
 
     def is_timer_fired(self):
-        if (self.time - self.checkpoint) >= self.period:
+        if round(self.time - self.checkpoint, 3) >= self.period:
             self.checkpoint = self.time
             return True
         return False

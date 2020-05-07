@@ -590,7 +590,7 @@ class TBC_Controller:
             self.ctrl_hold()
 
     def is_timer_fired(self):
-        if (self.time - self.checkpoint) >= self.period:
+        if round(self.time - self.checkpoint, 3) >= self.period:
             self.checkpoint = self.time
             return True
         return False

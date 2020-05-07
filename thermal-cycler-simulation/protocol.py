@@ -59,7 +59,7 @@ class Protocol:
 
     def tick(self, dt):
         self.time += dt
-        if self.time - self.checkpoint >= self.period:
+        if round(self.time - self.checkpoint, 3) >= self.period:
             self.record()
             self.checkpoint = self.time
 
