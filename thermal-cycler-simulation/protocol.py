@@ -29,18 +29,24 @@ class Protocol:
                                             update_period=self.dt,
                                             volume=10
         )
-        self.protocolData = pd.DataFrame(columns=["Epoch Time", 
-                                             "Sample Temp", 
-                                             "Block Temp", 
-                                             "Heat Sink Temp",
+        self.protocolData = pd.DataFrame(columns=[
+                "Epoch Time",
+                "Sample Temp",
+                "Block Temp",
+                "Heat Sink Temp",
                                              "QPID",
                                              "Iset",
-                                             "Imeasure",
-                                             "Control Stage",
-                                             "PID SP",
-                                             "PID PV"
-                                             ]
-        )
+                "Imeasure",
+                "Control Stage",
+                "PID SP",
+                "PID PV",
+                "PID m",
+                "PID b",
+                "PID y",
+                "PID ffwd",
+                "PID2 SP",
+                "PID2 PV"
+        ])        
 
     def record(self):
         data = {
@@ -54,9 +60,12 @@ class Protocol:
             "Control Stage" :   self.tbc_controller.stage,
             "PID SP"        :   self.tbc_controller.pid.SP,
             "PID PV"        :   self.tbc_controller.pid.PV,
+            "PID m"         :   self.tbc_controller.pid.m,
+            "PID b"         :   self.tbc_controller.pid.b,
+            "PID y"         :   self.tbc_controller.pid.y,
+            "PID ffwd"      :   self.tbc_controller.pid.ffwd,
             "PID2 SP"       :   self.tbc_controller.pid2.SP,
             "PID2 PV"       :   self.tbc_controller.pid2.PV
-
         }
         self.protocolData = self.protocolData.append(data, ignore_index=True)
 
