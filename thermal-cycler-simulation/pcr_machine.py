@@ -73,8 +73,7 @@ class  PCR_Machine:
         self.heat_sink_temp -= 0.007 * (self.heat_sink_temp - self.amb_temp)
     
     def update(self):
-        condition = [self.sample_volume,
-                     self.period,
+        condition = [self.sample_volume,                     
                      self.heat_sink_temp,
                      self.block_temp,
                      self.block_rate,
