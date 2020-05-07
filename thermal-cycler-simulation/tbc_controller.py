@@ -4,7 +4,7 @@ from peltier import Peltier
 from math import exp
 
 class TBC_Controller:
-    def __init__(self, PCR_Machine, start_time=0, update_period=0.2, volume=10):
+    def __init__(self, PCR_Machine, start_time=0, update_period=0.05, volume=10):
         self.pcr = PCR_Machine
         self.time = self.checkpoint = start_time              
         self.period = update_period
@@ -30,9 +30,9 @@ class TBC_Controller:
     
     def init_pid(self):
         self.pid = PID_Controller()
-        self.pid.dt = self.period
+        self.pid.dt = self.period / 60 # dt is in minute
         self.pid2 = PID_Controller()
-        self.pid2.dt = self.period
+        self.pid2.dt = self.period / 60 # dt is in minute
 
     def load_tuning_params(self):
         self.blockMCP = 10.962
