@@ -3,7 +3,7 @@ from tbc_controller import TBC_Controller
 import pandas as pd
 
 class Protocol:
-    def __init__(self, listSP, listRate, listHold, nCycles):
+    def __init__(self, listSP, listRate, listHold, nCycles, Tblock=25, Tamb=25):
         self.time = 0
         self.checkpoint = 0
         self.period = 0.2
@@ -14,12 +14,12 @@ class Protocol:
         self.nCycles = nCycles
         self.pcr_machine = PCR_Machine( "pcr_trained_model.ml",
                                         sample_volume=10,
-                                        sample_temp=25,
-                                        block_temp=25,
-                                        heat_sink_temp=25,
+                                        sample_temp=Tblock,
+                                        block_temp=Tblock,
+                                        heat_sink_temp=Tamb,
                                         block_rate=0,
                                         sample_rate=0,                                        
-                                        amb_temp=25,
+                                        amb_temp=Tamb,
                                         update_period=self.dt,
                                         start_time=0
                                         
@@ -78,6 +78,7 @@ class Protocol:
                     self.tick(self.dt)
                     ctime += self.dt
                     if ctime >= time_limit:
+                        print("ERROR: Ramp time exceeds the time limit.")
                         self.protocolData.to_csv("protocol.csv", index=False)
                         return
                 ctime = 0
@@ -89,6 +90,6 @@ class Protocol:
         self.protocolData.to_csv("protocol.csv", index=False)
 
 if __name__ == "__main__":
-    protocol = Protocol([95,60], [100, 100], [35, 35], 1)
+    protocol = Protocol([95,60], [50, 50], [35, 35], 1, Tblock=60, Tamb=25)
     protocol.run()
 
