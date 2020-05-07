@@ -164,9 +164,7 @@ class TBC_Controller:
             self.pid.PV = self.pcr.block_rate
         else:
             self.pid.PV = self.pcr.block_temp * 0.5
-
-        self.time_elapsed = self.time - self.start_time
-        self.ramp_dist = self.set_point - self.pcr.block_temp
+        self.time_elapsed = self.time - self.start_time        
 
     def prepare_overshoot_over(self):
         self.pid.reset()
@@ -231,23 +229,22 @@ class TBC_Controller:
 
     def prepare_ramp_down(self):
         self.stage = "Ramp Down"        
-        self.target_block_rate = self.calcBlockRate(self.pcr.cool_const) # target_block_rate is negative
-        self.target_sample_rate *= -1 # target_sample_rate is negative
+        self.target_block_rate = self.calcBlockRate(self.pcr.cool_const) # target_block_rate is negative        
 
         self.pid.load(self.pid_const, "Ramp Down")
         self.pid.SP = self.target_sample_rate
 
         if abs(self.target_block_rate) < self.block_slow_rate:
-            initial_qpid = -self.blockMCP * self.block_slow_rate
+            initial_qpid = self.blockMCP * self.block_slow_rate
         else:
             initial_qpid = self.blockMCP * self.target_block_rate
 
-        self.pid.ffwd = initial_qpid / self.qMaxRampPid * 100        
+        self.pid.ffwd = -initial_qpid / self.qMaxRampPid * 100        
         
         if self.pid.ffwd < -100:
             self.pid.ffwd = -100
 
-        overshoot_dt_const = (-self.ramp_dist - 2)/ (self.max_ramp_dist - 2)
+        overshoot_dt_const = (self.ramp_dist - 2)/ (self.max_ramp_dist - 2)
         if abs(self.target_sample_rate) <= self.max_down_ramp:
             overshoot_rr_const = 1
         else:
@@ -423,20 +420,20 @@ class TBC_Controller:
             if self.pid.SP < -1.05 * self.target_sample_rate:
                 self.pid.SP = -1.05 * self.target_sample_rate
 
-            if self.target_block_rate <= -self.block_slow_rate:
+            if self.target_block_rate <= self.block_slow_rate:
                 if self.target_sample_rate / self.max_down_ramp < 0.1:
                     stash = self.pid.P
                     factor = self.target_sample_rate / self.max_down_ramp * 10
                     self.pid.P *= factor
                     if self.pid.P < self.rampdown_minP:
                         self.pid.P = self.rampdown_minP          
-                    self.qpid = -self.qMaxRampPid * self.pid.update() * 0.01
+                    self.qpid = self.qMaxRampPid * self.pid.update() * 0.01
                     self.pid.P = stash
                 else:
-                    self.qpid = -self.qMaxRampPid * self.pid.update() * 0.01
+                    self.qpid = self.qMaxRampPid * self.pid.update() * 0.01
 
             else:
-                self.qpid = -self.qMaxRampPid * self.pid.update() * 0.01
+                self.qpid = self.qMaxRampPid * self.pid.update() * 0.01
 
         else: # block temp. has overshot the set point
             if self.pcr.sample_rate >= -self.sample_slow_rate:
@@ -446,10 +443,10 @@ class TBC_Controller:
                 overshoot_gap = self.set_point - self.calcHeatBlkOS - self.pcr.block_temp
                 if self.pcr.block_rate < self.pcr.sample_rate:
                     time_to_maxOS = overshoot_gap / self.pcr.block_rate
-                    self.rampDownStageRate = self.pcr.block_rate
+                    self.rampDownStageRate = abs(self.pcr.block_rate)
                 else:
                     time_to_maxOS = overshoot_gap / self.pcr.sample_rate
-                    self.rampDownStageRate = self.pcr.sample_rate
+                    self.rampDownStageRate = abs(self.pcr.sample_rate)
 
                 if self.calcCoolBlkOS > self.calcCoolBlkWin:
                     self.cool_brake = self.cool_brake_const * self.calcCoolBlkOS / time_to_maxOS
@@ -509,16 +506,17 @@ class TBC_Controller:
                 self.pid.b = self.pid2.b
                 self.pid.y = self.pid2.y
                 return
-        qPower = tempSP / self.rampDownStageRate * self.qMaxRampPid + (1 -tempSP / self.rampDownStageRate) * self.qMaxHoldPid
-        self.pid.SP = tempSP
+        qPower  = (tempSP / self.rampDownStageRate)     * self.qMaxRampPid
+        qPower += (1 - tempSP / self.rampDownStageRate) * self.qMaxHoldPid
+        self.pid.SP = -tempSP
         self.pid.ffwd = self.pid.SP * self.blockMCP / qPower * 100
-        self.qpid = -qPower * self.pid.update() / 100
+        self.qpid = qPower * self.pid.update() / 100
         if self.pid.SP >= self.coolSpCtrlActivRR * self.rampDownStageRate \
             or self.pid.SP >= self.coolSpCtrlActivSP:
             if self.spCtrlFirstActFlag == False:
                 self.pid2.y = self.pcr.block_temp * 0.5
                 self.spCtrlFirstActFlag = True
-            self.qpid += -qPower * self.pid2.update() / 100
+            self.qpid += qPower * self.pid2.update() / 100
         if self.pcr.block_temp <= self.set_point - self.calcCoolBlkOS:
             self.prepare_hold_under()
         self.peltier.mode = "cool"
@@ -595,35 +593,29 @@ class TBC_Controller:
             return True
         return False
 
-    def estimate_block_rate(self):
-        if self.ramp_dist > 0:
-            self.ramp_time = self.ramp_dist / self.target_sample_rate
-
     def calc_feed_forward(self):
         return 0
 
     def ramp_to(self, new_set_point, sample_rate):
         if self.set_point == new_set_point:
-            return
-            
+            return            
         self.pid.reset()
         self.start_time = self.time
-        self.time_elapsed = 0        
-        self.ramp_dist = new_set_point - self.pcr.block_temp        
-        self.set_point = new_set_point        
+        self.time_elapsed = 0
+        self.set_point = new_set_point
         self.smpWinInRampUpFlag = False
         self.smpWinInRampDownFlag = False
 
-        if self.ramp_dist > 2:
+        if new_set_point - self.pcr.block_temp > 2:
+            self.ramp_dist = new_set_point - self.pcr.block_temp
             self.target_sample_rate = sample_rate / 100 * self.max_up_ramp
-            self.ramp_time = abs(self.ramp_dist / self.target_sample_rate) # ramp_time is postive
+            self.ramp_time = self.ramp_dist / self.target_sample_rate
             self.prepare_ramp_up()
-
-        elif self.ramp_dist < -2:
+        elif new_set_point - self.pcr.block_temp < -2:
+            self.ramp_dist = self.pcr.block_temp - new_set_point
             self.target_sample_rate = sample_rate / 100 * self.max_down_ramp
-            self.ramp_time = abs(self.ramp_dist / self.target_sample_rate) # ramp_time is postive
+            self.ramp_time = self.ramp_dist / self.target_sample_rate
             self.prepare_ramp_down()
-
         else:
             self.prepare_hold()
 
