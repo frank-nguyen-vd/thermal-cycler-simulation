@@ -158,7 +158,7 @@ class TBC_Controller:
             if self.smpWinInRampDownFlag or self.smpWinInRampUpFlag:
                 self.pid.PV = self.pcr.sample_rate
             else:
-                self.pcr.block_rate
+                self.pid.PV = self.pcr.block_rate
             self.pid2.PV = self.pcr.block_temp * 0.5
         elif self.stage == "Land Over" or self.stage == "Land Under":
             self.pid.PV = self.pcr.block_rate
