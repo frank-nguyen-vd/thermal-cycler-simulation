@@ -81,4 +81,29 @@ class Peltier:
         elif Iset < -max_cool_current:
             Iset = -max_cool_current      
         Imeasure = self.model.predict([[heat_sink_temp, block_temp, Iset]])[0]
-        return Iset, Imeasure
+
+    def calculate_Vset(self, heat_sink_temp, block_temp, Iset):
+        I2set = Iset * Iset
+        if self.mode == "heat":
+            Th = block_temp
+            dT = block_temp - heat_sink_temp
+        elif self.mode == "cool":
+            Th = heat_sink_temp
+            dT = heat_sink_temp - block_temp
+        else:
+            raise Exception
+        dT2 = dT * dT
+        dT3 = dT2 * dT
+        Vset =  self.V[0] \
+                + self.V[1] * Th \
+                + self.V[2] * Iset \
+                + self.V[3] * I2set \
+                + self.V[4] * dT \
+                + self.V[5] * dT2 \
+                + self.V[6] * dT3 \
+                + self.V[7] * Iset * Th \
+                + self.V[8] * dT * Th \
+                + self.V[9] * Iset * dT
+        if self.mode == "cool":
+            Vset = -Vset
+        return Vset
