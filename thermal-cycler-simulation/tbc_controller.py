@@ -37,16 +37,16 @@ class TBC_Controller:
     def load_tuning_params(self):
         self.blockMCP = 10.962
         self.upRrEqn = [
-            4.8440929020,
-           -0.0325607505,
-           -0.0001714895,
-            0.0000018869
+            3.95293071,
+           -0.03074861,
+            0.00008966,
+            0.0
         ]
         self.downRrEqn = [
-            3.7445968870,
-           -0.0309892434,
-            0.0001028925,
-           -0.0000001561
+            3.03500389,
+           -0.02403729,
+            0.00008891,
+            0.0
         ]
         self.pid_const = {}
         self.pid_const["Ramp Up"        ] = {
