@@ -72,6 +72,7 @@ class Protocol:
                 self.tbc_controller.ramp_to(setpoint, rate)
                 time_limit = 2 * abs(setpoint - self.pcr_machine.sample_temp) / (rate / 100 * self.tbc_controller.max_down_ramp)
                 ctime = 0
+                print(f"Ramping to {setpoint}")
                 while abs(self.pcr_machine.sample_temp - setpoint) > 1:                    
                     self.tbc_controller.tick(self.dt)
                     self.pcr_machine.tick(self.dt)
@@ -82,17 +83,19 @@ class Protocol:
                         self.protocolData.to_csv("protocol.csv", index=False)
                         return
                 ctime = 0
+                print(f"Holding at {setpoint}")
                 while ctime < hold_time:                    
                     self.tbc_controller.tick(self.dt)
                     self.pcr_machine.tick(self.dt)                    
                     self.tick(self.dt)
                     ctime += self.dt
+        print("Saving protocol data")
         self.protocolData.to_csv("protocol.csv", index=False)
 
 if __name__ == "__main__":
     protocol = Protocol(listSP   =[ 95,  60], 
-                        listRate =[ 50,  50], 
-                        listHold =[100, 100], 
+                        listRate =[  5,   5], 
+                        listHold =[ 35,  35], 
                         nCycles  =2, 
                         Tblock   =60, 
                         Tamb     =25
