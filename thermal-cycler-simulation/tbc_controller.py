@@ -446,10 +446,10 @@ class TBC_Controller:
                 overshoot_gap = self.set_point - self.calcHeatBlkOS - self.pcr.block_temp
                 if self.pcr.block_rate < self.pcr.sample_rate:
                     time_to_maxOS = overshoot_gap / self.pcr.block_rate
-                    self.rampDownStageRate = self.pcr.block_rate
+                    self.rampDownStageRate = abs(self.pcr.block_rate)
                 else:
                     time_to_maxOS = overshoot_gap / self.pcr.sample_rate
-                    self.rampDownStageRate = self.pcr.sample_rate
+                    self.rampDownStageRate = abs(self.pcr.sample_rate)
 
                 if self.calcCoolBlkOS > self.calcCoolBlkWin:
                     self.cool_brake = self.cool_brake_const * self.calcCoolBlkOS / time_to_maxOS
@@ -509,8 +509,9 @@ class TBC_Controller:
                 self.pid.b = self.pid2.b
                 self.pid.y = self.pid2.y
                 return
-        qPower = tempSP / self.rampDownStageRate * self.qMaxRampPid + (1 -tempSP / self.rampDownStageRate) * self.qMaxHoldPid
-        self.pid.SP = tempSP
+        qPower  = (tempSP / self.rampDownStageRate)     * self.qMaxRampPid
+        qPower += (1 - tempSP / self.rampDownStageRate) * self.qMaxHoldPid
+        self.pid.SP = -tempSP
         self.pid.ffwd = self.pid.SP * self.blockMCP / qPower * 100
         self.qpid = -qPower * self.pid.update() / 100
         if self.pid.SP >= self.coolSpCtrlActivRR * self.rampDownStageRate \
