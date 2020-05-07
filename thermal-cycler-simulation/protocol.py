@@ -6,8 +6,9 @@ class Protocol:
     def __init__(self, listSP, listRate, listHold, nCycles, Tblock=25, Tamb=25):
         self.time = 0
         self.checkpoint = 0
-        self.period = 0.2
-        self.dt = 0.008        
+        self.record_period = 0.2
+        self.control_period = 0.05
+        self.dt = 0.01        
         self.listSP = listSP
         self.listRate = listRate
         self.listHold = listHold
@@ -20,27 +21,34 @@ class Protocol:
                                         block_rate=0,
                                         sample_rate=0,                                        
                                         amb_temp=Tamb,
-                                        update_period=self.dt,
+                                        update_period=self.control_period,
                                         start_time=0
                                         
         )
         self.tbc_controller = TBC_Controller(self.pcr_machine,
                                             start_time=0,
-                                            update_period=self.dt,
+                                            update_period=self.control_period,
                                             volume=10
         )
-        self.protocolData = pd.DataFrame(columns=["Epoch Time", 
-                                             "Sample Temp", 
-                                             "Block Temp", 
-                                             "Heat Sink Temp",
-                                             "QPID",
-                                             "Iset",
-                                             "Imeasure",
-                                             "Control Stage",
-                                             "PID SP",
-                                             "PID PV"
-                                             ]
-        )
+        self.protocolData = pd.DataFrame(columns=[
+                "Epoch Time",
+                "Sample Temp",
+                "Block Temp",
+                "Heat Sink Temp",
+                "QPID",
+                "Iset",
+                "Imeasure",
+                "Vset",
+                "Control Stage",
+                "PID SP",
+                "PID PV",
+                "PID m",
+                "PID b",
+                "PID y",
+                "PID ffwd",
+                "PID2 SP",
+                "PID2 PV"
+        ])        
 
     def record(self):
         data = {
@@ -51,18 +59,22 @@ class Protocol:
             "QPID"          :   self.tbc_controller.qpid,
             "Iset"          :   self.pcr_machine.Iset,
             "Imeasure"      :   self.pcr_machine.Imeasure,
+            "Vset"          :   self.pcr_machine.Vset,
             "Control Stage" :   self.tbc_controller.stage,
             "PID SP"        :   self.tbc_controller.pid.SP,
             "PID PV"        :   self.tbc_controller.pid.PV,
+            "PID m"         :   self.tbc_controller.pid.m,
+            "PID b"         :   self.tbc_controller.pid.b,
+            "PID y"         :   self.tbc_controller.pid.y,
+            "PID ffwd"      :   self.tbc_controller.pid.ffwd,
             "PID2 SP"       :   self.tbc_controller.pid2.SP,
             "PID2 PV"       :   self.tbc_controller.pid2.PV
-
         }
         self.protocolData = self.protocolData.append(data, ignore_index=True)
 
     def tick(self, dt):
         self.time += dt
-        if round(self.time - self.checkpoint, 3) >= self.period:
+        if round(self.time - self.checkpoint, 3) >= self.record_period:
             self.record()
             self.checkpoint = self.time
 

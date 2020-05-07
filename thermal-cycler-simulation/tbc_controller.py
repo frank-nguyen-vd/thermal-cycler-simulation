@@ -4,7 +4,7 @@ from peltier import Peltier
 from math import exp
 
 class TBC_Controller:
-    def __init__(self, PCR_Machine, start_time=0, update_period=0.2, volume=10):
+    def __init__(self, PCR_Machine, start_time=0, update_period=0.05, volume=10):
         self.pcr = PCR_Machine
         self.time = self.checkpoint = start_time              
         self.period = update_period
@@ -30,23 +30,23 @@ class TBC_Controller:
     
     def init_pid(self):
         self.pid = PID_Controller()
-        self.pid.dt = self.period
+        self.pid.dt = self.period / 60 # dt is in minute
         self.pid2 = PID_Controller()
-        self.pid2.dt = self.period
+        self.pid2.dt = self.period / 60 # dt is in minute
 
     def load_tuning_params(self):
         self.blockMCP = 10.962
         self.upRrEqn = [
-            4.8440929020,
-           -0.0325607505,
-           -0.0001714895,
-            0.0000018869
+            3.95293071,
+           -0.03074861,
+            0.00008966,
+            0.0
         ]
         self.downRrEqn = [
-            3.7445968870,
-           -0.0309892434,
-            0.0001028925,
-           -0.0000001561
+            3.03500389,
+           -0.02403729,
+            0.00008891,
+            0.0
         ]
         self.pid_const = {}
         self.pid_const["Ramp Up"        ] = {
@@ -620,14 +620,15 @@ class TBC_Controller:
             self.prepare_hold()
 
     def output(self):
-        Iset, Imeasure = self.peltier.output( self.qpid, 
-                                            self.pcr.heat_sink_temp,
-                                            self.pcr.block_temp,
-                                            self.maxHeatIset,
-                                            self.maxCoolIset
+        Iset, Imeasure, Vset = self.peltier.output( self.qpid, 
+                                                    self.pcr.heat_sink_temp,
+                                                    self.pcr.block_temp,
+                                                    self.maxHeatIset,
+                                                    self.maxCoolIset
         )
         self.pcr.Iset = Iset
         self.pcr.Imeasure = Imeasure
+        self.pcr.Vset = Vset
  
     def update(self):
         self.update_feedback()
