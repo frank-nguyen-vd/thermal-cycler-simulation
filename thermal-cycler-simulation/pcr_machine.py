@@ -69,7 +69,6 @@ class  PCR_Machine:
     
     def update(self):
         condition = [self.sample_volume,                     
-                     self.heat_sink_temp,
                      self.block_temp,
                      self.block_rate,
                      self.Iset,
