@@ -28,6 +28,7 @@ class  PCR_Machine:
         self.calculate_conversion_constant(self.sample_volume)
         self.Iset = 0
         self.Imeasure = 0
+        self.Vset = 0
         
     
     def load_model(self, path):
@@ -72,7 +73,8 @@ class  PCR_Machine:
                      self.block_temp,
                      self.block_rate,
                      self.Iset,
-                     self.Imeasure
+                     self.Imeasure,
+                     self.Vset
                     ]
         self.block_rate = self.model.predict([condition])[0]
         new_block_temp = self.block_temp + self.block_rate * self.period
