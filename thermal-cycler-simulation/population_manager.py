@@ -15,10 +15,12 @@ class PopulationManager:
     def create_population(self, pop_size):
         population = []
         
-        for i in range(0, pop_size):
+        for i in range(0, pop_size - 1):
             creature = DNA(PID_Specs())
             creature.rand_DNA()
             population.append(creature)
+        
+        population.append(self.create_genius())
         return population
 
     def init_environment(self, block_temp=60, amb_temp=25, update_period=0.05, sample_volume=10):
@@ -56,6 +58,21 @@ class PopulationManager:
                 offspring.rand_gene(i)
         return offspring
 
+    def create_genius(self):
+        genius = DNA(PID_Specs())
+        genius.genes = [3,0.06,0.0001,10,5,
+                        7,0.05,0,2,5,
+                        1,0.04,0.01,5,10,
+                        10,0.03,0,2,5,
+                        0.9,0.04,0.01,5,10,
+                        3,0.06,0.0001,10,5,
+                        7,0.05,0,2,5,
+                        1,0.04,0.01,5,10,
+                        10,0.03,0,2,5
+                        ]
+        return genius
+
+
     def breed_population(self, population):
         if len(population) <= 1:
             print("ERROR: Only one creature left. Population is dead.")
@@ -63,6 +80,7 @@ class PopulationManager:
 
         new_pop = []
         size = len(population) - 1
+        count_creatures = 2
         for i, dad in enumerate(population):            
             for no_of_offspring in range(0, 2):
                 while True:
@@ -71,6 +89,11 @@ class PopulationManager:
                         break
                 mom = population[j]
                 new_pop.append(self.mate(dad, mom))
+                count_creatures += 1
+                if count_creatures >= self.pop_size:
+                    break
+        print(f"count creatures = {count_creatures} against {self.pop_size}")
+        new_pop.append(self.create_genius())
         return new_pop
 
     def run(self):
@@ -186,5 +209,5 @@ class PopulationManager:
         protocol.run()            
 
 if __name__ == "__main__":
-    popMan = PopulationManager(max_generation=300, pop_size=200, mutation_chance=0.005)
+    popMan = PopulationManager(max_generation=3, pop_size=10, mutation_chance=0.005)
     popMan.run()
