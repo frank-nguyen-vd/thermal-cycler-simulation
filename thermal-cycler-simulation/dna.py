@@ -3,7 +3,8 @@ import random
 class DNA:
     def __init__(self, pid_specs):        
         self.init_DNA()
-        self.create_specs(pid_specs)        
+        self.create_specs(pid_specs)
+        self.alive = True   
         self.score = 0
     
     def create_specs(self, pid_specs):
