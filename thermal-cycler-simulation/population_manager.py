@@ -165,7 +165,7 @@ class PopulationManager:
 
         population.sort(key=self.getScore, reverse=True)
         print("==============================================================")
-        print(f"Best score is {population[0].score}")
+        print(f"Best score is {population[0].score} fitness points")
         k = 0
         for group_index in range(0, 9):
             P  = population[0].genes[k]
@@ -186,5 +186,5 @@ class PopulationManager:
         protocol.run()            
 
 if __name__ == "__main__":
-    popMan = PopulationManager(max_generation=2, pop_size=4, mutation_chance=0.005)
+    popMan = PopulationManager(max_generation=300, pop_size=200, mutation_chance=0.005)
     popMan.run()
