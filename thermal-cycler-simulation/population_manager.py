@@ -7,10 +7,11 @@ from random import random
 from protocol import Protocol
 
 class PopulationManager:
-    def __init__(self, pop_size=100, max_generation=50, mutation_chance=0.01):
+    def __init__(self, pop_size=100, max_generation=50, mutation_chance=0.01, record_filepath="protocol.csv"):
         self.pop_size = pop_size
         self.max_generation = max_generation
         self.mutation_chance = mutation_chance
+        self.record_filepath = record_filepath
 
     def create_population(self, pop_size):
         population = []
@@ -203,11 +204,12 @@ class PopulationManager:
                             listHold =[ 35,  35], 
                             nCycles  =1, 
                             Tblock   =60, 
-                            Tamb     =25
+                            Tamb     =25,
+                            record_filepath=self.record_filepath
                             )
         population[0].blend_in(protocol.tbc_controller)
         protocol.run()            
 
 if __name__ == "__main__":
-    popMan = PopulationManager(max_generation=3, pop_size=10, mutation_chance=0.005)
+    popMan = PopulationManager(max_generation=200, pop_size=100, mutation_chance=0.01, record_filepath="genius_creature.csv")
     popMan.run()
