@@ -56,6 +56,10 @@ class PopulationManager:
         return offspring
 
     def breed_population(self, population):
+        if len(population) <= 1:
+            print("ERROR: Only one creature left. Population is dead.")
+            raise Exception
+
         new_pop = []
         size = len(population) - 1
         for i, dad in enumerate(population):            
