@@ -6,17 +6,17 @@ class PID_Specs:
         self.Pres = 0.1
 
         self.Imin = 0
-        self.Imax = 1
-        self.Ires = 0.01
+        self.Imax = 5
+        self.Ires = 0.001
 
         self.Dmin = 0
-        self.Dmax = 0.1
+        self.Dmax = 1
         self.Dres = 0.001
 
         self.KImin = 1
-        self.KImax = 5
+        self.KImax = 10
         self.KIres = 1
 
-        self.KDmin = 5
+        self.KDmin = 1
         self.KDmax = 10
         self.KDres = 1
