@@ -443,7 +443,7 @@ class TBC_Controller:
                 self.prepare_hold()
             else:
                 self.smpWinInRampDownFlag = False
-                overshoot_gap = self.set_point - self.calcHeatBlkOS - self.pcr.block_temp
+                overshoot_gap = self.set_point - self.calcCoolBlkOS - self.pcr.block_temp
                 if self.pcr.block_rate < self.pcr.sample_rate:
                     time_to_maxOS = overshoot_gap / self.pcr.block_rate
                     self.rampDownStageRate = abs(self.pcr.block_rate)
