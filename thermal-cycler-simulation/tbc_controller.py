@@ -10,6 +10,7 @@ class TBC_Controller:
         self.period = update_period
         self.volume = volume
         self.set_point = self.pcr.sample_temp
+        self.stage = "Hold"
         self.max_block_temp = 109
         self.max_ramp_dist = 35
         self.unachievable = 10
@@ -20,6 +21,7 @@ class TBC_Controller:
         self.load_tuning_params()
         self.max_up_ramp = self.calc_poly_eqn(self.upRrEqn, self.volume)
         self.max_down_ramp = self.calc_poly_eqn(self.downRrEqn, self.volume)
+        
     
     def calc_poly_eqn(self, eqn, vol):
         return sum([vol**deg * coeff for deg, coeff in enumerate(eqn)])
