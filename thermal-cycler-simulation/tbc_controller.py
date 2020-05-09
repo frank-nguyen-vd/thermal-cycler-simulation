@@ -19,6 +19,7 @@ class TBC_Controller:
         self.init_pid()
         self.init_peltier()        
         self.load_tuning_params()
+        self.pid.load(self.pid_const, "Hold")
         self.max_up_ramp = self.calc_poly_eqn(self.upRrEqn, self.volume)
         self.max_down_ramp = self.calc_poly_eqn(self.downRrEqn, self.volume)
         
