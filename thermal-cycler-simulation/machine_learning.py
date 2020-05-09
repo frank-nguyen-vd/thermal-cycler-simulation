@@ -42,7 +42,7 @@ class MachineLearning:
         total = len(test_prediction)
         correct = 0
         for i in range(0, total):
-            if test_result[i] - self.accuracy_window <= test_prediction[i] <= test_result[i] + self.accuracy_window:
+            if abs(test_prediction[i] - test_result[i]) / test_result[i] * 100 <= self.accuracy_window:
                 correct += 1
         accuracy = round(correct * 100 / total, 2)
         if report:
@@ -60,12 +60,12 @@ class MachineLearning:
 if __name__ == "__main__":
     learning = MachineLearning()
     
-    learning.set_accuracy_window(0.1)
+    learning.set_accuracy_window(5)
     model = learning.train_model("train/pcr_training_set.csv", mod="pcr")
     learning.test_model(model, "test/pcr_testing_set.csv", report=True)
     learning.save_model(model, "pcr_trained_model.ml")
 
-    learning.set_accuracy_window(0.25)
+    learning.set_accuracy_window(10)
     model = learning.train_model("train/peltier_training_set.csv", mod="peltier")
     learning.test_model(model, "test/peltier_testing_set.csv", report=True)
     learning.save_model(model, "peltier_trained_model.ml")
