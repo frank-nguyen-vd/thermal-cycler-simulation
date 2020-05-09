@@ -100,7 +100,7 @@ class PopulationManager:
                         up_deviation = pcr.sample_temp - setpoint2                    
 
                 if not creature.alive:
-                    creature.score -= 100
+                    creature.score -= 1000
                     # giving the creature second chance to live
                     creature.alive = True                    
                     pcr, tbc = self.init_environment(block_temp=setpoint2)
@@ -147,14 +147,14 @@ class PopulationManager:
                         down_deviation = setpoint1 - pcr.sample_temp
 
                 if not creature.alive:
-                    creature.score -= 100
+                    creature.score -= 1000
                 else:
                     avg_rate = (setpoint2 - pcr.sample_temp) / ctime
                     creature.score -= abs(avg_rate - tbc.max_down_ramp) / tbc.max_down_ramp * 100
                     if down_deviation > 0.25:
                         creature.score -= down_deviation * 50
 
-                print(f"Creature {loc} scores {creature.score}")
+                print(f"Creature {loc} scores {creature.score} fitness points")
 
             population.sort(key=self.getScore, reverse=True)
             if i + 1 >= self.max_generation:
