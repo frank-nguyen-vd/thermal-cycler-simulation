@@ -27,7 +27,7 @@ class MachineLearning:
                                 verbose=True,
                                 max_iter=100)
         elif mod == "peltier":
-            model = MLPRegressor(hidden_layer_sizes=(100,),
+            model = MLPRegressor(hidden_layer_sizes=(8,8,8,),
                                 activation='relu',
                                 solver='adam',
                                 verbose=True,
