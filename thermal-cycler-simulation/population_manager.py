@@ -4,6 +4,7 @@ from pcr_machine import PCR_Machine
 from tbc_controller import TBC_Controller
 from random import randint
 from random import random
+from protocol import Protocol
 
 class PopulationManager:
     def __init__(self, pop_size=100, max_generation=50, mutation_chance=0.01):
@@ -315,8 +316,16 @@ class PopulationManager:
             KD = population[0].genes[k + 4]            
             k += 5
             print(f"Group {group_index}: P={P} I={I} D={D} KI={KI} KD={KD}")
-            
+        protocol = Protocol(listSP   =[ 95,  60], 
+                            listRate =[100, 100], 
+                            listHold =[ 35,  35], 
+                            nCycles  =1, 
+                            Tblock   =60, 
+                            Tamb     =25
+                            )
+        population[0].blend_in(protocol.tbc_controller)
+        protocol.run()            
 
 if __name__ == "__main__":
-    popMan = PopulationManager(max_generation=200, pop_size=100, mutation_chance=0.005)
+    popMan = PopulationManager(max_generation=2, pop_size=4, mutation_chance=0.005)
     popMan.run()
