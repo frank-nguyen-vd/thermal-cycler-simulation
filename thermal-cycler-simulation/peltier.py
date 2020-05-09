@@ -85,6 +85,7 @@ class Peltier:
                 Iset = -max_heat_current
 
         else:
+            print("ERROR: peltier mode is neither heat nor cool")
             raise Exception
         return Iset
 
@@ -97,6 +98,7 @@ class Peltier:
             Th = heat_sink_temp
             dT = heat_sink_temp - block_temp
         else:
+            print("ERROR: peltier mode is neither heat nor cool")
             raise Exception
         dT2 = dT * dT
         dT3 = dT2 * dT
