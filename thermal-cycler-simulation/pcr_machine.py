@@ -11,7 +11,7 @@ class  PCR_Machine:
                  block_rate=0, 
                  sample_rate=0,                 
                  amb_temp=25,
-                 update_period=0.008,
+                 update_period=0.05,
                  start_time=0
                 ):
         self.model = self.load_model(path_to_model)
@@ -76,7 +76,9 @@ class  PCR_Machine:
                      self.Imeasure,
                      self.Vset
                     ]
-        self.block_rate = self.model.predict([condition])[0]
+        new_block_rate = self.model.predict([condition])[0]
+        delta_rate = (new_block_rate - self.block_rate) / 0.2 * self.period        
+        self.block_rate += delta_rate
         new_block_temp = self.block_temp + self.block_rate * self.period
         self.update_heat_sink_temp(new_block_temp)
         self.update_sample_params(new_block_temp)
