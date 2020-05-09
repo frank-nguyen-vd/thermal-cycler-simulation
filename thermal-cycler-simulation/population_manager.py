@@ -86,7 +86,7 @@ class PopulationManager:
                 creature.blend_in(tbc)
                 creature.score = 0
                 tbc.ramp_to(new_set_point=setpoint2, sample_rate=100)
-                time_limit = 2 * (setpoint2 - setpoint1) / tbc.max_up_ramp
+                time_limit = 2.5 * (setpoint2 - setpoint1) / tbc.max_up_ramp
                 ctime = 0
                 up_deviation = 0
                 while tbc.stage != "Hold":
@@ -133,7 +133,7 @@ class PopulationManager:
                     creature.score -= (down_deviation - 0.1) * 50
                 
                 tbc.ramp_to(new_set_point=setpoint1, sample_rate=100)
-                time_limit = 2 * (setpoint2 - setpoint1) / tbc.max_down_ramp
+                time_limit = 2.5 * (setpoint2 - setpoint1) / tbc.max_down_ramp
                 ctime = 0
                 down_deviation = 0
                 while tbc.stage != "Hold":
