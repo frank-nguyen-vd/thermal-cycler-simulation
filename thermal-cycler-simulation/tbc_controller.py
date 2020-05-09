@@ -405,7 +405,7 @@ class TBC_Controller:
             if self.pid.SP < -self.smoothRegionOverRR:
                 self.pid.SP = -self.smoothRegionOverRR
         self.pid.ffwd = self.pid.SP * self.blockMCP / self.qMaxRampPid * 100
-        self.qpid = self.qMaxRampPid * self.pid.update() / 100
+        self.qpid = -self.qMaxRampPid * self.pid.update() / 100
         if self.pcr.block_temp - 0.25 <= self.set_point:
             self.prepare_hold()
         self.peltier.mode = "cool"
@@ -429,13 +429,13 @@ class TBC_Controller:
                     self.pid.P *= factor
                     if self.pid.P < self.rampdown_minP:
                         self.pid.P = self.rampdown_minP          
-                    self.qpid = self.qMaxRampPid * self.pid.update() * 0.01
+                    self.qpid = -self.qMaxRampPid * self.pid.update() * 0.01
                     self.pid.P = stash
                 else:
-                    self.qpid = self.qMaxRampPid * self.pid.update() * 0.01
+                    self.qpid = -self.qMaxRampPid * self.pid.update() * 0.01
 
             else:
-                self.qpid = self.qMaxRampPid * self.pid.update() * 0.01
+                self.qpid = -self.qMaxRampPid * self.pid.update() * 0.01
 
         else: # block temp. has overshot the set point
             if self.pcr.sample_rate >= -self.sample_slow_rate:
@@ -512,13 +512,13 @@ class TBC_Controller:
         qPower += (1 - tempSP / self.rampDownStageRate) * self.qMaxHoldPid
         self.pid.SP = -tempSP
         self.pid.ffwd = self.pid.SP * self.blockMCP / qPower * 100
-        self.qpid = qPower * self.pid.update() / 100
+        self.qpid = -qPower * self.pid.update() / 100
         if self.pid.SP >= self.coolSpCtrlActivRR * self.rampDownStageRate \
             or self.pid.SP >= self.coolSpCtrlActivSP:
             if self.spCtrlFirstActFlag == False:
                 self.pid2.y = self.pcr.block_temp * 0.5
                 self.spCtrlFirstActFlag = True
-            self.qpid += qPower * self.pid2.update() / 100
+            self.qpid -= qPower * self.pid2.update() / 100
         if self.pcr.block_temp <= self.set_point - self.calcCoolBlkOS:
             self.prepare_hold_under()
         self.peltier.mode = "cool"
