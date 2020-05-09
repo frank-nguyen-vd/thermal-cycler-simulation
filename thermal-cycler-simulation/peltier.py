@@ -105,7 +105,7 @@ class Peltier:
                 + self.V[8] * dT * Th \
                 + self.V[9] * Iset * dT
         if self.mode == "cool":
-            Vset = -abs(Vset)
+            Vset = -Vset
         return Vset
 
     def output(self, qpid, heat_sink_temp, block_temp, max_heat_current, max_cool_current):
