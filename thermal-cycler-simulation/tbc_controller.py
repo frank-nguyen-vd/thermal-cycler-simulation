@@ -6,7 +6,7 @@ from math import exp
 class TBC_Controller:
     def __init__(self, PCR_Machine, start_time=0, update_period=0.05, volume=10):
         self.pcr = PCR_Machine
-        self.time = self.checkpoint = start_time              
+        self.time = self.checkpoint = self.start_time = start_time              
         self.period = update_period
         self.volume = volume
         self.set_point = self.pcr.sample_temp
@@ -600,7 +600,7 @@ class TBC_Controller:
         return 0
 
     def ramp_to(self, new_set_point, sample_rate):
-        if self.set_point == new_set_point:
+        if self.set_point == new_set_point:            
             return            
         self.pid.reset()
         self.start_time = self.time
