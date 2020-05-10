@@ -209,7 +209,7 @@ class PopulationManager:
                             record_filepath=filepath
                             )
         creature.blend_in(protocol.tbc_controller)
-        protocol.run()  
+        protocol.run(record_mode='a')  
 
     def run(self):
         population = []
