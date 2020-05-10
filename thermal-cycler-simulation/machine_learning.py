@@ -1,19 +1,15 @@
 import pandas as pd
 import joblib
 from sklearn.neural_network import MLPRegressor
-from sklearn.neighbors import RadiusNeighborsRegressor
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.ensemble import AdaBoostRegressor
-from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.ensemble import VotingRegressor
 from sklearn.ensemble import BaggingRegressor
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.linear_model import SGDRegressor
-from sklearn.dummy import DummyRegressor
 from sklearn.ensemble import StackingRegressor
-from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVR
 
 class MachineLearning:
@@ -66,6 +62,9 @@ class MachineLearning:
 
             list_models.append(SVR())
             list_names.append("SVR")
+
+            list_models.append(SGDRegressor(warm_start=True, average=False, learning_rate='optimal'))
+            list_names.append("SGD")
 
 
             list_models.append(VotingRegressor(list(zip(list_names, list_models))))
