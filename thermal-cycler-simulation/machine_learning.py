@@ -23,15 +23,16 @@ class MachineLearning:
         if mod == "pcr":
             model = MLPRegressor(hidden_layer_sizes=(100,100,100,),
                                 activation='relu',
-                                solver='adam',
+                                solver='lbfgs',..
                                 verbose=True,
-                                max_iter=100)
+                                warm_start=True,
+                                max_iter=1000)
         elif mod == "peltier":
             model = MLPRegressor(hidden_layer_sizes=(8,8,8,),
                                 activation='relu',
                                 solver='adam',
                                 verbose=True,
-                                max_iter=100)
+                                max_iter=1000)
 
         model = model.fit(train_condition, train_result)
         return model
