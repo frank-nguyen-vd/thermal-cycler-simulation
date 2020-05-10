@@ -24,7 +24,7 @@ class PopulationManager:
         population.append(self.create_genius())
         return population
 
-    def init_environment(self, block_temp=60, amb_temp=25, update_period=0.05, dt=0.025, sample_volume=10):
+    def init_environment(self, block_temp=60, amb_temp=25, update_period=0.05, sample_volume=10):
         pcr_machine = PCR_Machine(      "pcr_trained_model.ml",
                                         sample_volume=sample_volume,
                                         sample_temp=block_temp,
@@ -33,7 +33,7 @@ class PopulationManager:
                                         block_rate=0,
                                         sample_rate=0,                                        
                                         amb_temp=amb_temp,
-                                        update_period=dt,
+                                        update_period=update_period,
                                         start_time=0
                                         
         )
@@ -99,11 +99,11 @@ class PopulationManager:
         new_pop.append(self.create_genius())
         return new_pop
 
-    def eval_fitness_score(self, creature, update_period=0.05, dt=0.025):
+    def eval_fitness_score(self, creature, update_period=0.05, dt=0.05):
         setpoint1 = 60
         setpoint2 = 95
         hold_time = 35
-        pcr, tbc = self.init_environment(block_temp=setpoint1, update_period=update_period, dt=dt)
+        pcr, tbc = self.init_environment(block_temp=setpoint1, update_period=update_period)
         creature.blend_in(tbc)
         creature.score = 0
         tbc.ramp_to(new_set_point=setpoint2, sample_rate=100)
@@ -124,7 +124,7 @@ class PopulationManager:
             creature.score -= 1000
             # giving the creature second chance to live
             creature.alive = True                    
-            pcr, tbc = self.init_environment(block_temp=setpoint2, update_period=update_period, dt=dt)
+            pcr, tbc = self.init_environment(block_temp=setpoint2, update_period=update_period)
             creature.blend_in(tbc)
             tbc.ramp_to(new_set_point=setpoint2, sample_rate=100)                    
         else:
