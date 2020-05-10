@@ -95,8 +95,7 @@ class PopulationManager:
                 new_pop.append(self.mate(dad, mom))
                 count_creatures += 1
                 if count_creatures >= self.pop_size:
-                    break
-        print(f"count creatures = {count_creatures} against {self.pop_size}")
+                    break        
         new_pop.append(self.create_genius())
         return new_pop
 
