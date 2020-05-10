@@ -178,15 +178,15 @@ class PopulationManager:
     def export_creature(self, creature, filepath):
         import csv
         stage = [  "Ramp Up", 
-                        "Overshoot Over", 
-                        "Hold Over", 
-                        "Land Over", 
-                        "Hold", 
-                        "Ramp Down", 
-                        "Overshoot Under", 
-                        "Hold Under", 
-                        "Land Under"
-                    ]
+                    "Overshoot Over", 
+                    "Hold Over", 
+                    "Land Over", 
+                    "Hold", 
+                    "Ramp Down", 
+                    "Overshoot Under", 
+                    "Hold Under", 
+                    "Land Under"
+                ]
         with open(filepath, 'w', newline='') as file:
             writer = csv.writer(file)            
             writer.writerow(["Score"])
@@ -235,7 +235,7 @@ class PopulationManager:
             D  = population[0].genes[5 * k + 2]
             KI = population[0].genes[5 * k + 3]
             KD = population[0].genes[5 * k + 4]                
-            print(f"Stage {group_name[k]}: P={P} I={I} D={D} KI={KI} KD={KD}")
+            print(f"Stage {group_name[k]}: P={P:.4f} I={I:.4f} D={D:.4f} KI={KI:.4f} KD={KD:.4f}")
             
         self.export_creature(population[0], self.record_filepath)
         
@@ -243,5 +243,5 @@ class PopulationManager:
           
 
 if __name__ == "__main__":
-    popMan = PopulationManager(max_generation=200, pop_size=100, mutation_chance=0.01, record_filepath="genius_creature.csv")
+    popMan = PopulationManager(max_generation=1, pop_size=2, mutation_chance=0.01, record_filepath="xxx.csv")
     popMan.run()
