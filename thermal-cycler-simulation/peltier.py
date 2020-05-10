@@ -119,5 +119,9 @@ class Peltier:
     def output(self, qpid, heat_sink_temp, block_temp, max_heat_current, max_cool_current):
         Iset = self.calculate_Iset(qpid, heat_sink_temp, block_temp, max_heat_current, max_cool_current)
         Vset = self.calculate_Vset(heat_sink_temp, block_temp, Iset)
-        Imeasure = self.model.predict([[heat_sink_temp, block_temp, Iset, Vset]])[0]
+        Imeasure = self.model.predict([[Iset, Vset]])[0]
+        if Vset < 0:
+            Imeasure = -abs(Imeasure)
+        else:
+            Imeasure = abs(Imeasure)
         return Iset, Imeasure, Vset

@@ -90,13 +90,10 @@ class  PCR_Machine:
         self.heat_sink_temp -= 0.007 * (self.heat_sink_temp - self.amb_temp)        
 
     def update(self):
-        condition = [self.sample_volume,
-                     self.heat_sink_temp,          
+        condition = [self.sample_volume,                     
                      self.block_temp,
                      self.block_rate,
-                     self.Iset,
                      self.Imeasure,
-                     self.Vset
                     ]        
         d_Tblock = (self.model.predict([condition])[0] - self.block_temp) * self.period / 0.2
         new_block_temp = self.block_temp + d_Tblock
