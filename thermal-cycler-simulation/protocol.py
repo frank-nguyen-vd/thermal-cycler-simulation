@@ -79,7 +79,7 @@ class Protocol:
             self.record()
             self.checkpoint = self.time
 
-    def run(self):
+    def run(self, record_mode='w'):
         for i in range(0, self.nCycles):
             for setpoint, rate, hold_time in zip(self.listSP, self.listRate, self.listHold):
                 self.tbc_controller.ramp_to(setpoint, rate)
@@ -103,7 +103,7 @@ class Protocol:
                     self.tick(self.dt)
                     ctime += self.dt
         print("Saving protocol data")
-        self.protocolData.to_csv(self.record_filepath, index=False, mode='a')
+        self.protocolData.to_csv(self.record_filepath, index=False, mode=record_mode)
 
 if __name__ == "__main__":
     protocol = Protocol(listSP   =[ 95,  60], 
