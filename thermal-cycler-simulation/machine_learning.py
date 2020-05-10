@@ -56,24 +56,24 @@ class MachineLearning:
             list_models.append(DecisionTreeRegressor(criterion='friedman_mse'))
             list_names.append("Decision Tree")
 
-            list_models.append(NuSVR())
-            list_names.append("NuSVR")
+            # list_models.append(NuSVR())
+            # list_names.append("NuSVR")
 
-            list_models.append(StackingRegressor(estimators=list(zip(list_names, list_models)),
-                                                final_estimator=MLPRegressor(hidden_layer_sizes=(8,8,8,),
-                                                                            activation='relu',
-                                                                            solver='adam',
-                                                                            verbose=False,
-                                                                            warm_start=True,
-                                                                            max_iter=1000),
-                                                ))
-            list_names.append("Stacking")
+            # list_models.append(StackingRegressor(estimators=list(zip(list_names, list_models)),
+            #                                     final_estimator=MLPRegressor(hidden_layer_sizes=(8,8,8,),
+            #                                                                 activation='relu',
+            #                                                                 solver='adam',
+            #                                                                 verbose=False,
+            #                                                                 warm_start=True,
+            #                                                                 max_iter=1000),
+            #                                     ))
+            # list_names.append("Stacking")
 
-            list_models.append(SVR())
-            list_names.append("SVR")
+            # list_models.append(SVR())
+            # list_names.append("SVR")
 
-            list_models.append(VotingRegressor(list(zip(list_names, list_models))))
-            list_names.append("Voting")
+            # list_models.append(VotingRegressor(list(zip(list_names, list_models))))
+            # list_names.append("Voting")
 
             list_models.append(KNeighborsRegressor(n_neighbors=10, weights='distance', leaf_size=30))
             list_names.append("K-Neighbors")
@@ -122,12 +122,12 @@ class MachineLearning:
 if __name__ == "__main__":
     learning = MachineLearning()
     
-    learning.set_accuracy_window(0.1)
+    learning.set_accuracy_window(0.01)
     model = learning.train_model(train_path="train/pcr_training_set.csv", 
                                  test_path="test/pcr_testing_set.csv")    
     learning.save_model(model, "pcr_trained_model.ml")
 
-    learning.set_accuracy_window(10)
+    learning.set_accuracy_window(0.01)
     model = learning.train_model(train_path="train/peltier_training_set.csv",
                                  test_path="test/peltier_testing_set.csv")    
     learning.save_model(model, "peltier_trained_model.ml")
