@@ -12,6 +12,7 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn.linear_model import SGDRegressor
 from sklearn.ensemble import StackingRegressor
 from sklearn.svm import SVR
+from sklearn.svm import NuSVR
 
 class MachineLearning:
     def __init__(self):
@@ -73,6 +74,9 @@ class MachineLearning:
 
             list_models.append(SVR())
             list_names.append("SVR")
+
+            list_models.append(NuSVR())
+            list_names.append("NuSVR")            
 
             list_models.append(SGDRegressor(warm_start=True, average=False, learning_rate='optimal'))
             list_names.append("SGD")
