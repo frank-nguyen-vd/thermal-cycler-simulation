@@ -3,7 +3,7 @@ from tbc_controller import TBC_Controller
 import pandas as pd
 
 class Protocol:
-    def __init__(self, listSP, listRate, listHold, nCycles, Tblock=25, Tamb=25):
+    def __init__(self, listSP, listRate, listHold, nCycles, Tblock=25, Tamb=25, record_filepath="protocol.csv"):
         self.time = 0
         self.checkpoint = 0
         self.record_period = 0.2
@@ -13,6 +13,7 @@ class Protocol:
         self.listRate = listRate
         self.listHold = listHold
         self.nCycles = nCycles
+        self.record_filepath = record_filepath
         self.pcr_machine = PCR_Machine( "pcr_trained_model.ml",
                                         sample_volume=10,
                                         sample_temp=Tblock,
@@ -102,13 +103,13 @@ class Protocol:
                     self.tick(self.dt)
                     ctime += self.dt
         print("Saving protocol data")
-        self.protocolData.to_csv("protocol.csv", index=False)
+        self.protocolData.to_csv(self.record_filepath, index=False, mode='a')
 
 if __name__ == "__main__":
     protocol = Protocol(listSP   =[ 95,  60], 
-                        listRate =[  5,   5], 
+                        listRate =[100, 100], 
                         listHold =[ 35,  35], 
-                        nCycles  =2, 
+                        nCycles  =1, 
                         Tblock   =60, 
                         Tamb     =25
                         )

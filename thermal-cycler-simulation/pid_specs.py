@@ -17,6 +17,6 @@ class PID_Specs:
         self.KImax = 10
         self.KIres = 0.001
 
-        self.KDmin = 0
+        self.KDmin = 1 # KD must be positive
         self.KDmax = 10
         self.KDres = 0.001

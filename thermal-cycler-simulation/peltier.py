@@ -58,6 +58,10 @@ class Peltier:
                     + self.QH[7] * dT**3 \
                     + self.QH[8] * block_temp * qpid \
                     + self.QH[9] * block_temp * dT
+            if Iset > max_heat_current:
+                Iset = max_heat_current
+            elif Iset < -max_cool_current:
+                Iset = -max_cool_current
 
         elif self.mode == "cool":
             dT = heat_sink_temp - block_temp
@@ -74,12 +78,15 @@ class Peltier:
                 Iset = max_heat_current
             else:
                 Iset = (-B + sqrt(B*B - 4*A*C)) / (A + A)
+
+            if Iset > max_cool_current:
+                Iset = max_cool_current
+            elif Iset < -max_heat_current:
+                Iset = -max_heat_current
+
         else:
+            print("ERROR: peltier mode is neither heat nor cool")
             raise Exception
-        if Iset > max_heat_current:
-            Iset = max_heat_current
-        elif Iset < -max_cool_current:
-            Iset = -max_cool_current
         return Iset
 
     def calculate_Vset(self, heat_sink_temp, block_temp, Iset):
@@ -91,6 +98,7 @@ class Peltier:
             Th = heat_sink_temp
             dT = heat_sink_temp - block_temp
         else:
+            print("ERROR: peltier mode is neither heat nor cool")
             raise Exception
         dT2 = dT * dT
         dT3 = dT2 * dT
@@ -105,7 +113,7 @@ class Peltier:
                 + self.V[8] * dT * Th \
                 + self.V[9] * Iset * dT
         if self.mode == "cool":
-            Vset = -abs(Vset)
+            Vset = -Vset
         return Vset
 
     def output(self, qpid, heat_sink_temp, block_temp, max_heat_current, max_cool_current):

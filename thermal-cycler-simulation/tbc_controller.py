@@ -6,7 +6,7 @@ from math import exp
 class TBC_Controller:
     def __init__(self, PCR_Machine, start_time=0, update_period=0.05, volume=10):
         self.pcr = PCR_Machine
-        self.time = self.checkpoint = start_time              
+        self.time = self.checkpoint = self.start_time = start_time              
         self.period = update_period
         self.volume = volume
         self.set_point = self.pcr.sample_temp
@@ -19,6 +19,7 @@ class TBC_Controller:
         self.init_pid()
         self.init_peltier()        
         self.load_tuning_params()
+        self.pid.load(self.pid_const, "Hold")
         self.max_up_ramp = self.calc_poly_eqn(self.upRrEqn, self.volume)
         self.max_down_ramp = self.calc_poly_eqn(self.downRrEqn, self.volume)
         
@@ -405,7 +406,7 @@ class TBC_Controller:
             if self.pid.SP < -self.smoothRegionOverRR:
                 self.pid.SP = -self.smoothRegionOverRR
         self.pid.ffwd = self.pid.SP * self.blockMCP / self.qMaxRampPid * 100
-        self.qpid = self.qMaxRampPid * self.pid.update() / 100
+        self.qpid = -self.qMaxRampPid * self.pid.update() / 100
         if self.pcr.block_temp - 0.25 <= self.set_point:
             self.prepare_hold()
         self.peltier.mode = "cool"
@@ -429,20 +430,20 @@ class TBC_Controller:
                     self.pid.P *= factor
                     if self.pid.P < self.rampdown_minP:
                         self.pid.P = self.rampdown_minP          
-                    self.qpid = self.qMaxRampPid * self.pid.update() * 0.01
+                    self.qpid = -self.qMaxRampPid * self.pid.update() * 0.01
                     self.pid.P = stash
                 else:
-                    self.qpid = self.qMaxRampPid * self.pid.update() * 0.01
+                    self.qpid = -self.qMaxRampPid * self.pid.update() * 0.01
 
             else:
-                self.qpid = self.qMaxRampPid * self.pid.update() * 0.01
+                self.qpid = -self.qMaxRampPid * self.pid.update() * 0.01
 
         else: # block temp. has overshot the set point
             if self.pcr.sample_rate >= -self.sample_slow_rate:
                 self.prepare_hold()
             else:
                 self.smpWinInRampDownFlag = False
-                overshoot_gap = self.set_point - self.calcHeatBlkOS - self.pcr.block_temp
+                overshoot_gap = self.set_point - self.calcCoolBlkOS - self.pcr.block_temp
                 if self.pcr.block_rate < self.pcr.sample_rate:
                     time_to_maxOS = overshoot_gap / self.pcr.block_rate
                     self.rampDownStageRate = abs(self.pcr.block_rate)
@@ -512,13 +513,13 @@ class TBC_Controller:
         qPower += (1 - tempSP / self.rampDownStageRate) * self.qMaxHoldPid
         self.pid.SP = -tempSP
         self.pid.ffwd = self.pid.SP * self.blockMCP / qPower * 100
-        self.qpid = qPower * self.pid.update() / 100
+        self.qpid = -qPower * self.pid.update() / 100
         if self.pid.SP >= self.coolSpCtrlActivRR * self.rampDownStageRate \
             or self.pid.SP >= self.coolSpCtrlActivSP:
             if self.spCtrlFirstActFlag == False:
                 self.pid2.y = self.pcr.block_temp * 0.5
                 self.spCtrlFirstActFlag = True
-            self.qpid += qPower * self.pid2.update() / 100
+            self.qpid -= qPower * self.pid2.update() / 100
         if self.pcr.block_temp <= self.set_point - self.calcCoolBlkOS:
             self.prepare_hold_under()
         self.peltier.mode = "cool"
@@ -599,7 +600,7 @@ class TBC_Controller:
         return 0
 
     def ramp_to(self, new_set_point, sample_rate):
-        if self.set_point == new_set_point:
+        if self.set_point == new_set_point:            
             return            
         self.pid.reset()
         self.start_time = self.time
