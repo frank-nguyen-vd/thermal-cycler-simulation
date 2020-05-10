@@ -8,7 +8,7 @@ class Protocol:
         self.checkpoint = 0
         self.record_period = 0.2
         self.control_period = 0.05
-        self.dt = 0.01        
+        self.dt = 0.05
         self.listSP = listSP
         self.listRate = listRate
         self.listHold = listHold
@@ -22,7 +22,7 @@ class Protocol:
                                         block_rate=0,
                                         sample_rate=0,                                        
                                         amb_temp=Tamb,
-                                        update_period=self.dt,
+                                        update_period=self.control_period,
                                         start_time=0
                                         
         )
