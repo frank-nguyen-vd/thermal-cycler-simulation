@@ -54,14 +54,8 @@ class MachineLearning:
                                 max_iter=1000))
             list_names.append("Neural Network")
 
-            list_models.append(KNeighborsRegressor(n_neighbors=5, weights='distance', leaf_size=30))
-            list_names.append("K-Neighbors")
-
             list_models.append(RandomForestRegressor(n_estimators=10, n_jobs=-1, warm_start=True))
             list_names.append("Random Forest")
-
-            list_models.append(GradientBoostingRegressor(loss='lad', warm_start=True))
-            list_names.append("Gradient Boosting")
 
             list_models.append(BaggingRegressor(warm_start=True))
             list_names.append("Bagging")
@@ -69,24 +63,27 @@ class MachineLearning:
             list_models.append(DecisionTreeRegressor(criterion='friedman_mse'))
             list_names.append("Decision Tree")
 
-            list_models.append(VotingRegressor(list(zip(list_names, list_models))))
-            list_names.append("Voting")
+            list_models.append(NuSVR())
+            list_names.append("NuSVR")
+
+            list_models.append(StackingRegressor(estimators=list(zip(list_names, list_models)),
+                                                final_estimator=MLPRegressor(hidden_layer_sizes=(8,8,8,),
+                                                                            activation='relu',
+                                                                            solver='adam',
+                                                                            verbose=False,
+                                                                            warm_start=True,
+                                                                            max_iter=1000),
+                                                ))
+            list_names.append("Stacking")
 
             list_models.append(SVR())
             list_names.append("SVR")
 
-            list_models.append(NuSVR())
-            list_names.append("NuSVR")
+            list_models.append(VotingRegressor(list(zip(list_names, list_models))))
+            list_names.append("Voting")
 
-            list_models.append(AdaBoostRegressor(loss='square'))
-            list_names.append("Ada Boost")
-
-            list_models.append(SGDRegressor(warm_start=True, average=False, learning_rate='optimal'))
-            list_names.append("SGD")
-
-            list_models.append(StackingRegressor(list(zip(list_names, list_models))))
-            list_names.append("Stacking")
-
+            list_models.append(KNeighborsRegressor(n_neighbors=10, weights='distance', leaf_size=30))
+            list_names.append("K-Neighbors")
 
             max_score = 0
             model_loc = 0
@@ -132,7 +129,7 @@ class MachineLearning:
 if __name__ == "__main__":
     learning = MachineLearning()
     
-    learning.set_accuracy_window(5)
+    learning.set_accuracy_window(0.1)
     model = learning.train_model(train_path="train/pcr_training_set.csv", 
                                  test_path="test/pcr_testing_set.csv")    
     learning.save_model(model, "pcr_trained_model.ml")
