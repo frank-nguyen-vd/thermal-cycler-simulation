@@ -1,5 +1,6 @@
 import pandas as pd
 import joblib
+
 from sklearn.neural_network import MLPRegressor
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.ensemble import RandomForestRegressor
@@ -23,11 +24,21 @@ class MachineLearning:
         dataset = pd.read_csv(path)        
         condition = dataset.iloc[:, :-1].values        
         result = dataset.iloc[:, -1].values        
-    
+        condition = self.feature_scaling(condition)    
         return condition, result
+
+    def feature_scaling(self, dataset):
+        if dataset.shape[1] == 6:
+            scaler = [1, 0.1, 100, 1, 1, 1]
+        elif dataset.shape[1] == 4:
+            scaler = [0.1, 0.1, 1, 1]
+        else:
+            return dataset
+
+        return dataset * scaler
     
     def train_model(self, train_path, test_path, algo='auto'):
-        train_condition, train_result = self.load_data(train_path)
+        train_condition, train_result = self.load_data(train_path)        
 
         # Training the model
         if algo == "auto":
