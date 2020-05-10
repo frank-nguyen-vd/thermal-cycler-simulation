@@ -29,14 +29,7 @@ class MachineLearning:
         return condition, result
 
     def feature_scaling(self, dataset):
-        if dataset.shape[1] == 7:
-            scaler = [1, 1, 1, 1, 1, 1, 1]
-        elif dataset.shape[1] == 4:
-            scaler = [1, 1, 1, 1]
-        else:
-            return dataset
-
-        return dataset * scaler
+        return dataset
     
     def train_model(self, train_path, test_path, algo='auto'):
         train_condition, train_result = self.load_data(train_path)        
