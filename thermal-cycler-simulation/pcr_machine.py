@@ -62,14 +62,15 @@ class  PCR_Machine:
             self.heat_sink_temp -= 0.01 * delta_Tblock 
         else: # block is cooling down
             # for peltier, when block is cooled down, the heat sink is heated up
-            self.heat_sink_temp += 0.02 * delta_Tblock
+            self.heat_sink_temp += 0.1 * delta_Tblock
         # heat sink temp is heated up by block temperature
         self.heat_sink_temp += 0.001 * (new_block_temp - self.heat_sink_temp)
         # heat sink temp is cooled by fan
         self.heat_sink_temp -= 0.007 * (self.heat_sink_temp - self.amb_temp)
     
     def update(self):
-        condition = [self.sample_volume,                     
+        condition = [self.sample_volume,
+                     self.heat_sink_temp,          
                      self.block_temp,
                      self.block_rate,
                      self.Iset,
