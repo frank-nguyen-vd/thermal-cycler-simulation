@@ -24,7 +24,7 @@ class PopulationManager:
         population.append(self.create_genius())
         return population
 
-    def init_environment(self, block_temp=60, amb_temp=25, update_period=0.05, sample_volume=10):
+    def init_environment(self, block_temp=60, amb_temp=25, update_period=0.05, dt=0.025, sample_volume=10):
         pcr_machine = PCR_Machine(      "pcr_trained_model.ml",
                                         sample_volume=sample_volume,
                                         sample_temp=block_temp,
@@ -33,13 +33,13 @@ class PopulationManager:
                                         block_rate=0,
                                         sample_rate=0,                                        
                                         amb_temp=amb_temp,
-                                        update_period=update_period,
+                                        update_period=dt,
                                         start_time=0
                                         
         )
         tbc_controller = TBC_Controller(    pcr_machine,
                                             start_time=0,
-                                            update_period=0.05,
+                                            update_period=update_period,
                                             volume=10
         )
         return pcr_machine, tbc_controller
@@ -99,11 +99,11 @@ class PopulationManager:
         new_pop.append(self.create_genius())
         return new_pop
 
-    def eval_fitness_score(self, creature):
+    def eval_fitness_score(self, creature, update_period=0.05, dt=0.025):
         setpoint1 = 60
         setpoint2 = 95
         hold_time = 35
-        pcr, tbc = self.init_environment(block_temp=setpoint1)
+        pcr, tbc = self.init_environment(block_temp=setpoint1, update_period=update_period, dt=dt)
         creature.blend_in(tbc)
         creature.score = 0
         tbc.ramp_to(new_set_point=setpoint2, sample_rate=100)
@@ -114,9 +114,9 @@ class PopulationManager:
             if ctime > time_limit:
                 creature.alive = False
                 break
-            tbc.tick(0.05)
-            pcr.tick(0.05)
-            ctime += 0.05
+            tbc.tick(dt)
+            pcr.tick(dt)
+            ctime += dt
             if pcr.sample_temp - setpoint2 > up_deviation:
                 up_deviation = pcr.sample_temp - setpoint2                    
 
@@ -124,7 +124,7 @@ class PopulationManager:
             creature.score -= 1000
             # giving the creature second chance to live
             creature.alive = True                    
-            pcr, tbc = self.init_environment(block_temp=setpoint2)
+            pcr, tbc = self.init_environment(block_temp=setpoint2, update_period=update_period, dt=dt)
             creature.blend_in(tbc)
             tbc.ramp_to(new_set_point=setpoint2, sample_rate=100)                    
         else:
@@ -140,9 +140,9 @@ class PopulationManager:
             if tbc.stage != "Hold":
                 print("ERROR: TBC Controller is not at stage HOLD while holding at setpoint")
                 raise Exception
-            tbc.tick(0.05)
-            pcr.tick(0.05)
-            ctime += 0.05
+            tbc.tick(dt)
+            pcr.tick(dt)
+            ctime += dt
             if pcr.sample_temp - setpoint2 > up_deviation:
                 up_deviation = pcr.sample_temp - setpoint2
             elif setpoint2 - pcr.sample_temp > down_deviation:
@@ -161,9 +161,9 @@ class PopulationManager:
             if ctime > time_limit:
                 creature.alive = False
                 break
-            tbc.tick(0.05)
-            pcr.tick(0.05)
-            ctime += 0.05
+            tbc.tick(dt)
+            pcr.tick(dt)
+            ctime += dt
             if setpoint1 - pcr.sample_temp > down_deviation:
                 down_deviation = setpoint1 - pcr.sample_temp
 
@@ -243,5 +243,5 @@ class PopulationManager:
           
 
 if __name__ == "__main__":
-    popMan = PopulationManager(max_generation=1, pop_size=2, mutation_chance=0.01, record_filepath="xxx.csv")
+    popMan = PopulationManager(max_generation=200, pop_size=100, mutation_chance=0.01, record_filepath="protocol.csv")
     popMan.run()
