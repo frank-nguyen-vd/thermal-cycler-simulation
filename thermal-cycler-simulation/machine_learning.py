@@ -42,7 +42,10 @@ class MachineLearning:
         total = len(test_prediction)
         correct = 0
         for i in range(0, total):
-            if abs(test_prediction[i] - test_result[i]) / test_result[i] * 100 <= self.accuracy_window:
+            if test_result[i] == 0:
+                if abs(test_prediction[i]) <= 0.1:
+                    correct += 1
+            elif abs(test_prediction[i] - test_result[i]) / test_result[i] * 100 <= self.accuracy_window:               
                 correct += 1
         accuracy = round(correct * 100 / total, 2)
         if report:
