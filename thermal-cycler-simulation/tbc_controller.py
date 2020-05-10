@@ -53,64 +53,64 @@ class TBC_Controller:
         ]
         self.pid_const = {}
         self.pid_const["Ramp Up"        ] = {
-            "P"  : 3, 
-            "I"  : 0.06, 
+            "P"  : 2.5, 
+            "I"  : 0.1, 
             "D"  : 0.0001, 
             "KI" : 10, 
-            "KD" : 5
+            "KD" : 20
         }
         self.pid_const["Overshoot Over" ] = {
-            "P"  : 7, 
-            "I"  : 0.05, 
+            "P"  : 6, 
+            "I"  : 0.1, 
             "D"  : 0.0, 
             "KI" : 2, 
             "KD" : 5
         }
         self.pid_const["Hold Over"      ] = {
-            "P"  : 1, 
-            "I"  : 0.04, 
+            "P"  : 2, 
+            "I"  : 0.02, 
             "D"  : 0.01, 
             "KI" : 5, 
             "KD" : 10
         }
         self.pid_const["Land Over"      ] = {
-            "P"  : 10, 
-            "I"  : 0.03, 
-            "D"  : 0.00, 
-            "KI" : 2, 
-            "KD" : 5
-        }
-        self.pid_const["Hold"           ] = {
-            "P"  : 0.9, 
-            "I"  : 0.04, 
-            "D"  : 0.01, 
-            "KI" : 5, 
-            "KD" : 10
-        }
-        self.pid_const["Ramp Down"      ] = {
-            "P"  : 3, 
-            "I"  : 0.06, 
-            "D"  : 0.0001, 
-            "KI" : 10, 
-            "KD" : 5
-        }
-        self.pid_const["Overshoot Under"] = {
             "P"  : 7, 
             "I"  : 0.05, 
             "D"  : 0.00, 
             "KI" : 2, 
             "KD" : 5
         }
+        self.pid_const["Hold"           ] = {
+            "P"  : 0.7, 
+            "I"  : 0.02, 
+            "D"  : 0.01, 
+            "KI" : 5, 
+            "KD" : 10
+        }
+        self.pid_const["Ramp Down"      ] = {
+            "P"  : 2.5, 
+            "I"  : 0.05, 
+            "D"  : 0.0001, 
+            "KI" : 10, 
+            "KD" : 20
+        }
+        self.pid_const["Overshoot Under"] = {
+            "P"  : 3, 
+            "I"  : 0.1, 
+            "D"  : 0.00, 
+            "KI" : 2, 
+            "KD" : 5
+        }
         self.pid_const["Hold Under"     ] = {
-            "P"  : 1, 
-            "I"  : 0.04, 
+            "P"  : 1.2, 
+            "I"  : 0.02, 
             "D"  : 0.01, 
             "KI" : 5, 
             "KD" : 10
         }
         self.pid_const["Land Under"     ] = {
-            "P"  : 10, 
-            "I"  : 0.03, 
+            "P"  : 7, 
+            "I"  : 0.1, 
             "D"  : 0.00, 
             "KI" : 2, 
             "KD" : 5
