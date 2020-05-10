@@ -22,7 +22,7 @@ class Protocol:
                                         block_rate=0,
                                         sample_rate=0,                                        
                                         amb_temp=Tamb,
-                                        update_period=self.control_period,
+                                        update_period=self.dt,
                                         start_time=0
                                         
         )
