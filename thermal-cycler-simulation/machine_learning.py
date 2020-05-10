@@ -1,6 +1,20 @@
 import pandas as pd
 import joblib
 from sklearn.neural_network import MLPRegressor
+from sklearn.neighbors import RadiusNeighborsRegressor
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import AdaBoostRegressor
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.ensemble import VotingRegressor
+from sklearn.ensemble import BaggingRegressor
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.linear_model import SGDRegressor
+from sklearn.dummy import DummyRegressor
+from sklearn.ensemble import StackingRegressor
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVR
 
 class MachineLearning:
     def __init__(self):
@@ -16,41 +30,82 @@ class MachineLearning:
     
         return condition, result
     
-    def train_model(self, path, mod):
-        train_condition, train_result = self.load_data(path)
+    def train_model(self, train_path, test_path, algo='auto'):
+        train_condition, train_result = self.load_data(train_path)
 
         # Training the model
-        if mod == "pcr":
-            model = MLPRegressor(hidden_layer_sizes=(100,100,100,),
-                                activation='relu',
-                                solver='lbfgs',..
-                                verbose=True,
-                                warm_start=True,
-                                max_iter=1000)
-        elif mod == "peltier":
-            model = MLPRegressor(hidden_layer_sizes=(8,8,8,),
+        if algo == "auto":
+            list_models = []
+            list_names = []
+            print("--- Evaluating the score of all regressors")
+            list_models.append( MLPRegressor(hidden_layer_sizes=(8,8,8,),
                                 activation='relu',
                                 solver='adam',
-                                verbose=True,
-                                max_iter=1000)
+                                verbose=False,
+                                warm_start=True,
+                                max_iter=1000))
+            list_names.append("Neural Network")
 
-        model = model.fit(train_condition, train_result)
-        return model
+            list_models.append(KNeighborsRegressor(n_neighbors=10, weights='distance', leaf_size=30))
+            list_names.append("K-Neighbors")
+
+            list_models.append(RandomForestRegressor(n_estimators=10, n_jobs=-1, warm_start=True))
+            list_names.append("Random Forest")
+
+            list_models.append(AdaBoostRegressor())
+            list_names.append("Ada Boost")
+
+            list_models.append(GradientBoostingRegressor())
+            list_names.append("Gradient Boosting")
+
+            list_models.append(BaggingRegressor())
+            list_names.append("Bagging")
+
+            list_models.append(DecisionTreeRegressor())
+            list_names.append("Decision Tree")
+
+            list_models.append(SVR())
+            list_names.append("SVR")
+
+
+            list_models.append(VotingRegressor(list(zip(list_names, list_models))))
+            list_names.append("Voting")
+
+            list_models.append(StackingRegressor(list(zip(list_names, list_models))))
+            list_names.append("Stacking")
+
+
+            max_score = 0
+            model_loc = 0
+
+            for loc in range(0, len(list_models)):
+                list_models[loc] = list_models[loc].fit(train_condition, train_result)
+                score = self.test_model(list_models[loc], test_path, model_name=list_names[loc], report=True)
+                if score > max_score:
+                    max_score = score
+                    model_loc = loc
+            print(f"--- The best regressor is {list_names[model_loc]} which scores {max_score}%\n")
+            
+            return list_models[model_loc]
+        else:
+            print("ERROR: Algorithm must be 'auto'")
+            raise Exception
+
     
-    def test_model(self, model, path, report=True):        
+    def test_model(self, model, path, model_name="N.A.", report=True):        
         test_condition, test_result = self.load_data(path)
         test_prediction = model.predict(test_condition)
         total = len(test_prediction)
         correct = 0
         for i in range(0, total):
             if test_result[i] == 0:
-                if abs(test_prediction[i]) <= 0.1:
+                if abs(test_prediction[i]) <= 0.01:
                     correct += 1
             elif abs(test_prediction[i] - test_result[i]) / test_result[i] * 100 <= self.accuracy_window:               
                 correct += 1
         accuracy = round(correct * 100 / total, 2)
         if report:
-            print("Total = {} Correct = {} Accuracy = {}".format(total, correct, accuracy))
+            print("[{}] Accuracy = {}% ({} / {})".format(model_name, accuracy, correct, total))
         return accuracy
     
     def save_model(self, model, path):
@@ -65,11 +120,11 @@ if __name__ == "__main__":
     learning = MachineLearning()
     
     learning.set_accuracy_window(5)
-    model = learning.train_model("train/pcr_training_set.csv", mod="pcr")
-    learning.test_model(model, "test/pcr_testing_set.csv", report=True)
+    model = learning.train_model(train_path="train/pcr_training_set.csv", 
+                                 test_path="test/pcr_testing_set.csv")    
     learning.save_model(model, "pcr_trained_model.ml")
 
     learning.set_accuracy_window(10)
-    model = learning.train_model("train/peltier_training_set.csv", mod="peltier")
-    learning.test_model(model, "test/peltier_testing_set.csv", report=True)
+    model = learning.train_model(train_path="train/peltier_training_set.csv",
+                                 test_path="test/peltier_testing_set.csv")    
     learning.save_model(model, "peltier_trained_model.ml")
