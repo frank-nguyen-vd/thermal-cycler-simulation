@@ -60,9 +60,6 @@ class MachineLearning:
             list_models.append(RandomForestRegressor(n_estimators=10, n_jobs=-1, warm_start=True))
             list_names.append("Random Forest")
 
-            list_models.append(AdaBoostRegressor(loss='square'))
-            list_names.append("Ada Boost")
-
             list_models.append(GradientBoostingRegressor(loss='lad', warm_start=True))
             list_names.append("Gradient Boosting")
 
@@ -72,18 +69,20 @@ class MachineLearning:
             list_models.append(DecisionTreeRegressor(criterion='friedman_mse'))
             list_names.append("Decision Tree")
 
+            list_models.append(VotingRegressor(list(zip(list_names, list_models))))
+            list_names.append("Voting")
+
             list_models.append(SVR())
             list_names.append("SVR")
 
             list_models.append(NuSVR())
-            list_names.append("NuSVR")            
+            list_names.append("NuSVR")
+
+            list_models.append(AdaBoostRegressor(loss='square'))
+            list_names.append("Ada Boost")
 
             list_models.append(SGDRegressor(warm_start=True, average=False, learning_rate='optimal'))
             list_names.append("SGD")
-
-
-            list_models.append(VotingRegressor(list(zip(list_names, list_models))))
-            list_names.append("Voting")
 
             list_models.append(StackingRegressor(list(zip(list_names, list_models))))
             list_names.append("Stacking")
