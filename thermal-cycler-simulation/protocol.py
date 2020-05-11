@@ -117,7 +117,7 @@ class Protocol:
 if __name__ == "__main__":
     protocol = Protocol(listSP   =[ 95,  60], 
                         listRate =[100, 100], 
-                        listHold =[ 10,  10], 
+                        listHold =[ 15,  15], 
                         nCycles  =1, 
                         Tblock   =60, 
                         Tamb     =25

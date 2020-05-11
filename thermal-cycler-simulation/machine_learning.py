@@ -42,7 +42,7 @@ class MachineLearning:
         if algo == "auto":
             list_models = []
             list_names = []
-            print("--- Evaluating all regressors in {test_method} evaluation ---")
+            print(f"--- Evaluating all regressors in {test_method} evaluation ---")
             list_models.append( MLPRegressor(hidden_layer_sizes=(8,8,8,),
                                 activation='relu',
                                 solver='adam',
@@ -139,9 +139,9 @@ class MachineLearning:
                 best_score = score
                 best_pcr_model = pcr_model
                 if report:
-                    print(f"[Iteration {i}] The best PCR Model scores: {best_score}\n")
+                    print(f"[Iteration {i}] The best PCR Model scores {best_score} in {test_method} evaluation\n")
         if report:
-            print(f"\n*** The best PCR Model scores {best_score} after {max_iters} iterations\n")
+            print(f"\n*** The best PCR Model scores {best_score} after {max_iters} iterations in {test_method} evaluation\n")
 
         return best_pcr_model
     

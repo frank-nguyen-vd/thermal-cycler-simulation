@@ -13,7 +13,7 @@ class PopulationManager:
                     mutation_chance=0.01, 
                     stagnant_period=10,
                     pcr_model=None,                    
-                    pcr_model_path="default_pcr_model.ml",                    
+                    pcr_model_path="best_pcr_model.ml",                    
                     record_filepath="protocol.csv"):
         self.pcr_model = pcr_model        
         self.pop_size = pop_size
@@ -281,11 +281,11 @@ class PopulationManager:
           
 
 if __name__ == "__main__":
-    max_gen = 1
-    max_pop = 4
+    max_gen = 500
+    max_pop = 20
     popMan = PopulationManager( max_generation=max_gen, 
                                 pop_size=max_pop, 
                                 mutation_chance=0.0222,
-                                stagnant_period=50,
+                                stagnant_period=25,
                                 record_filepath=f"pop{max_pop}gen{max_gen}.csv")    
     popMan.run()
