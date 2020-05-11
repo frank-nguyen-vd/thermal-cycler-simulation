@@ -11,8 +11,7 @@ class Protocol:
                 nCycles=6, 
                 Tblock=25, 
                 Tamb=25, 
-                pcr_path="best_pcr_model.ml",
-                peltier_path="best_peltier_model.ml",
+                pcr_path="best_pcr_model.ml",                
                 record_filepath="protocol.csv"):
         self.time = 0
         self.checkpoint = 0
@@ -36,7 +35,7 @@ class Protocol:
                                         start_time=0
                                         
         )
-        self.peltier = Peltier(path_to_model=peltier_path)
+        self.peltier = Peltier()
         self.tbc_controller = TBC_Controller(PCR_Machine=self.pcr_machine,
                                             Peltier=self.peltier,
                                             start_time=0,
@@ -49,8 +48,7 @@ class Protocol:
                 "Block Temp",
                 "Heat Sink Temp",
                 "QPID",
-                "Iset",
-                "Imeasure",
+                "Iset",                
                 "Vset",
                 "Control Stage",
                 "PID SP",
@@ -70,8 +68,7 @@ class Protocol:
             "Block Temp"    :   self.pcr_machine.block_temp,
             "Heat Sink Temp":   self.pcr_machine.heat_sink_temp,
             "QPID"          :   self.tbc_controller.qpid,
-            "Iset"          :   self.pcr_machine.Iset,
-            "Imeasure"      :   self.pcr_machine.Imeasure,
+            "Iset"          :   self.pcr_machine.Iset,            
             "Vset"          :   self.pcr_machine.Vset,
             "Control Stage" :   self.tbc_controller.stage,
             "PID SP"        :   self.tbc_controller.pid.SP,

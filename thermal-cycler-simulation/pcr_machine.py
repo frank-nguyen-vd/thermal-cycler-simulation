@@ -97,7 +97,8 @@ class  PCR_Machine:
         condition = [self.sample_volume,                     
                      self.block_temp,
                      self.block_rate,
-                     self.Imeasure,
+                     self.Iset,
+                     self.Vset,
                     ]        
         d_Tblock = (self.pcr_model.predict([condition])[0] - self.block_temp) * self.period / 0.2
         new_block_temp = self.block_temp + d_Tblock

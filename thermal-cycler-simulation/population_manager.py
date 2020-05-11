@@ -12,19 +12,15 @@ class PopulationManager:
                     max_generation=50, 
                     mutation_chance=0.01, 
                     stagnant_period=10,
-                    pcr_model=None,
-                    peltier_model=None,
-                    pcr_model_path="default_pcr_model.ml",
-                    peltier_model_path="default_peltier_model.ml",
+                    pcr_model=None,                    
+                    pcr_model_path="default_pcr_model.ml",                    
                     record_filepath="protocol.csv"):
-        self.pcr_model = pcr_model
-        self.peltier_model = peltier_model
+        self.pcr_model = pcr_model        
         self.pop_size = pop_size
         self.max_generation = max_generation
         self.mutation_chance = mutation_chance
         self.stagnant_period = stagnant_period
-        self.pcr_model_path = pcr_model_path
-        self.peltier_model_path = peltier_model_path
+        self.pcr_model_path = pcr_model_path        
         self.record_filepath = record_filepath
 
     def create_population(self, pop_size):
@@ -54,8 +50,7 @@ class PopulationManager:
                                         
         )
 
-        peltier = Peltier(peltier_model=self.peltier_model, path_to_model=self.peltier_model_path)
-
+        peltier = Peltier()
             
         tbc_controller = TBC_Controller(    PCR_Machine=pcr_machine,
                                             Peltier=peltier,
