@@ -14,8 +14,8 @@ class PopulationManager:
                     stagnant_period=10,
                     pcr_model=None,
                     peltier_model=None,
-                    pcr_model_path="best_pcr_trained_model.ml",
-                    peltier_model_path="best_peltier_trained_model.ml",
+                    pcr_model_path="default_pcr_model.ml",
+                    peltier_model_path="default_peltier_model.ml",
                     record_filepath="protocol.csv"):
         self.pcr_model = pcr_model
         self.peltier_model = peltier_model
@@ -57,8 +57,8 @@ class PopulationManager:
         peltier = Peltier(peltier_model=self.peltier_model, path_to_model=self.peltier_model_path)
 
             
-        tbc_controller = TBC_Controller(    PCR_Machine_Model=pcr_machine,
-                                            Peltier_Model=peltier,
+        tbc_controller = TBC_Controller(    PCR_Machine=pcr_machine,
+                                            Peltier=peltier,
                                             start_time=0,
                                             update_period=update_period,
                                             volume=10
@@ -286,8 +286,8 @@ class PopulationManager:
           
 
 if __name__ == "__main__":
-    max_gen = 1000
-    max_pop = 20
+    max_gen = 1
+    max_pop = 4
     popMan = PopulationManager( max_generation=max_gen, 
                                 pop_size=max_pop, 
                                 mutation_chance=0.0222,
