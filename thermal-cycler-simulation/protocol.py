@@ -1,9 +1,19 @@
 from pcr_machine import PCR_Machine
 from tbc_controller import TBC_Controller
+from peltier import Peltier
 import pandas as pd
 
 class Protocol:
-    def __init__(self, listSP, listRate, listHold, nCycles, Tblock=25, Tamb=25, record_filepath="protocol.csv"):
+    def __init__(self, 
+                listSP=[ 95,  60], 
+                listRate=[100, 100], 
+                listHold=[35, 35], 
+                nCycles=6, 
+                Tblock=25, 
+                Tamb=25, 
+                pcr_path="best_pcr_model.ml",
+                peltier_path="best_peltier_model.ml",
+                record_filepath="protocol.csv"):
         self.time = 0
         self.checkpoint = 0
         self.record_period = 0.2
@@ -14,7 +24,7 @@ class Protocol:
         self.listHold = listHold
         self.nCycles = nCycles
         self.record_filepath = record_filepath
-        self.pcr_machine = PCR_Machine( "best_pcr_trained_model.ml",
+        self.pcr_machine = PCR_Machine( path_to_model=pcr_path,
                                         sample_volume=10,
                                         sample_temp=Tblock,
                                         block_temp=Tblock,
@@ -26,7 +36,9 @@ class Protocol:
                                         start_time=0
                                         
         )
-        self.tbc_controller = TBC_Controller(self.pcr_machine,
+        self.peltier = Peltier(path_to_model=peltier_path)
+        self.tbc_controller = TBC_Controller(PCR_Machine=self.pcr_machine,
+                                            Peltier=self.peltier,
                                             start_time=0,
                                             update_period=self.control_period,
                                             volume=10
@@ -108,7 +120,7 @@ class Protocol:
 if __name__ == "__main__":
     protocol = Protocol(listSP   =[ 95,  60], 
                         listRate =[100, 100], 
-                        listHold =[ 35,  35], 
+                        listHold =[ 10,  10], 
                         nCycles  =1, 
                         Tblock   =60, 
                         Tamb     =25

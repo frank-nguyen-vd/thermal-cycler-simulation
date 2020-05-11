@@ -2,7 +2,7 @@ from math import sqrt
 import joblib
 
 class Peltier:
-    def __init__(self, peltier_model=None, path_to_model="best_peltier_trained_model.ml", mode="heat"):
+    def __init__(self, peltier_model=None, path_to_model="default_peltier_model.ml", mode="heat"):
         self.mode = mode
         if peltier_model == None:
             self.peltier_model = self.load_model(path_to_model)

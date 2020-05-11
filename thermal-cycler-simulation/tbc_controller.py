@@ -4,9 +4,9 @@ from peltier import Peltier
 from math import exp
 
 class TBC_Controller:
-    def __init__(self, PCR_Machine_Model, Peltier_Model, start_time=0, update_period=0.05, volume=10):
-        self.pcr = PCR_Machine_Model
-        self.peltier = Peltier_Model
+    def __init__(self, PCR_Machine, Peltier, start_time=0, update_period=0.05, volume=10):
+        self.pcr = PCR_Machine
+        self.peltier = Peltier
         self.time = self.checkpoint = self.start_time = start_time              
         self.period = update_period
         self.volume = volume
