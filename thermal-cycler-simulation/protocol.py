@@ -14,7 +14,7 @@ class Protocol:
         self.listHold = listHold
         self.nCycles = nCycles
         self.record_filepath = record_filepath
-        self.pcr_machine = PCR_Machine( "pcr_trained_model.ml",
+        self.pcr_machine = PCR_Machine( "best_pcr_trained_model.ml",
                                         sample_volume=10,
                                         sample_temp=Tblock,
                                         block_temp=Tblock,

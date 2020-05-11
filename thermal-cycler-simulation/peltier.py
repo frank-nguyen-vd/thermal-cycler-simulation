@@ -40,7 +40,7 @@ class Peltier:
             -0.0051499
         ]
         self.mode = "heat"
-        self.model = self.load_model("peltier_trained_model.ml")
+        self.model = self.load_model("best_peltier_trained_model.ml")
 
     def load_model(self, path):
         return joblib.load(path)
