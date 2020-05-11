@@ -32,14 +32,12 @@ class MachineLearning:
     def feature_scaling(self, dataset):
         return dataset
     
-    def train_model(self, train_file_path=None, 
-                          test_method="single points",
-                          test_file_path=None, 
+    def train_model(self, test_method="single points",                          
+                          train_path=None, 
+                          test_path=None, 
                           algo='auto', 
-                          default_pcr_path=None, 
-                          default_peltier_path=None):
-
-        train_condition, train_result = self.load_data(train_file_path)        
+                          report=False):
+        train_condition, train_result = self.load_data(train_path)        
         # Training the model
         if algo == "auto":
             list_models = []
@@ -74,33 +72,19 @@ class MachineLearning:
 
             max_score = -1000000
             model_loc = 0
-            pcr_model = None
-            peltier_model = None            
-            if test_method == "thermal profile":
-                if default_pcr_path != None:
-                    pcr_model = self.load_model(default_pcr_path)
-                if default_peltier_path != None:
-                    peltier_model = self.load_model(default_peltier_path)
-
             for loc in range(0, len(list_models)):
                 list_models[loc] = list_models[loc].fit(train_condition, train_result)
-                if pcr_model == None:
-                    score = self.test_model(test_method=test_method,
-                                            pcr_model=list_models[loc],
-                                            peltier_model=peltier_model,
-                                            test_file_path=test_file_path,
-                                           )
-                else:
-                    score = self.test_model(test_method=test_method,
-                                            pcr_model=pcr_model,
-                                            peltier_model=list_models[loc],
-                                            test_file_path=test_file_path,
-                                           )
-
+                score = self.test_model(test_method=test_method,
+                                        pcr_model=list_models[loc],
+                                        test_path=test_path,
+                                        )
+                if report:
+                    print(f"{list_names[loc]} scores {score}")
                 if score > max_score:
                     max_score = score
                     model_loc = loc
-            print(f"--- The best regressor is {list_names[model_loc]} which scores {max_score}\n")
+            if report:
+                print(f"--- The best regressor is {list_names[model_loc]} which scores {max_score}\n")
             
             return list_models[model_loc], max_score
         else:
@@ -109,74 +93,57 @@ class MachineLearning:
 
     
     def test_model(self,
+                    pcr_model=None,    
                     test_method="single points",
-                    pcr_model=None,                     
-                    peltier_model=None,                     
-                    test_file_path=None,
+                    test_path=None,
+                    acc_win=0.1,
                   ):
-        if test_method == "single points":
-            test_condition, test_result = self.load_data(test_file_path)
-            if pcr_model == None:
-                test_prediction = peltier_model.predict(test_condition)
-            else:
-                test_prediction = pcr_model.predict(test_condition)
+        score = 0
+        if test_method == "single points" or test_method == "hybrid":
+            test_condition, test_result = self.load_data(test_path)
+            test_prediction = pcr_model.predict(test_condition)
 
             total = len(test_prediction)
             correct = 0
             for i in range(0, total):
-                if test_result[i] == 0:
-                    if abs(test_prediction[i]) <= 0.1:
-                        correct += 1
-                elif abs(test_prediction[i] - test_result[i]) / test_result[i] * 100 <= self.accuracy_window:               
+                if abs(test_prediction[i] - test_result[i]) <= acc_win:               
                     correct += 1            
-            return round(correct * 100 / total, 2)
-        elif test_method == "thermal profile":
-            pop_man = PopulationManager(pcr_model=pcr_model, peltier_model=peltier_model,)
-            return pop_man.eval_fitness_score(pop_man.create_genius())
-        else:
-            print("ERROR: undefined test method")
-            raise Exception        
+            score += round(correct * 100 / total, 2)
+        if test_method == "thermal profile" or test_method == "hybrid":
+            pop_man = PopulationManager(pcr_model=pcr_model)
+            score += pop_man.eval_fitness_score(pop_man.create_genius())
 
-    def pickBestMLmodels(self, 
+        if score == 0:
+            print("ERROR: undefined test method")
+            raise Exception
+
+        return score
+
+    def pickBestMLmodels(   self, 
                             test_method="thermal profile",
                             pcr_train_path="train/pcr_training_set.csv",
                             pcr_test_path="test/pcr_testing_set.csv",
-                            peltier_train_path="train/peltier_training_set.csv",
-                            peltier_test_path="test/peltier_testing_set.csv",                            
-                            default_pcr_path="default_pcr_model.ml",
-                            default_peltier_path="default_peltier_model.ml",
-                            max_iters=1,
+                            max_iters=10,
+                            report=True,
                         ):        
         best_score = -1000000
         best_pcr_model = None
         for i in range(0, max_iters):            
-            pcr_model, score = self.train_model(train_file_path=pcr_train_path, 
-                                            test_file_path=pcr_test_path,
+            pcr_model, score = self.train_model(train_path=pcr_train_path, 
+                                            test_path=pcr_test_path,
                                             test_method=test_method,
-                                            default_peltier_path=default_peltier_path,
+                                            report=True,
                                             )        
             
             if score > best_score:
                 best_score = score
                 best_pcr_model = pcr_model
-                print(f"\nThe best PCR Model scores: {best_score}\n")        
+                if report:
+                    print(f"[Iteration {i}] The best PCR Model scores: {best_score}\n")
+        if report:
+            print(f"\n*** The best PCR Model scores {best_score} after {max_iters} iterations\n")
 
-        best_score = -1000000
-        best_peltier_model = None
-        for i in range(0, max_iters):
-            
-            peltier_model,score = learning.train_model(train_file_path=peltier_train_path, 
-                                            test_file_path=peltier_test_path,
-                                            test_method=test_method,
-                                            default_pcr_path=default_pcr_path,
-                                            )           
-            
-            if score > best_score:
-                best_score = score
-                best_peltier_model = peltier_model
-                print(f"\nThe best Peltier Model scores: {best_score}\n")
-
-        return best_pcr_model, best_peltier_model
+        return best_pcr_model
     
     def save_model(self, model, path):
         # save the model to disk        
@@ -189,11 +156,13 @@ class MachineLearning:
 if __name__ == "__main__":
     learning = MachineLearning()
 
-    # best_pcr, best_peltier = learning.pickBestMLmodels(test_method="single points")
-    # learning.save_model(best_pcr, "default_pcr_model.ml")
-    # learning.save_model(best_peltier, "default_peltier_model.ml")
+    default_pcr = learning.pickBestMLmodels(test_method="single points", max_iters=5,)
+    learning.save_model(default_pcr, "points_pcr_model.ml")
+    
+    best_pcr = learning.pickBestMLmodels(test_method="thermal profile", max_iters=5,)
+    learning.save_model(best_pcr, "profile_pcr_model.ml")
+    
+    default_pcr = learning.pickBestMLmodels(test_method="hybrid", max_iters=5,)
+    learning.save_model(default_pcr, "hybrid_pcr_model.ml")
 
-    best_pcr, best_peltier = learning.pickBestMLmodels(test_method="thermal profile")
-    learning.save_model(best_pcr, "best_pcr_model.ml")
-    learning.save_model(best_peltier, "best_peltier_model.ml")    
 
