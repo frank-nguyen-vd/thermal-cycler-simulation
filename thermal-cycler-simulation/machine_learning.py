@@ -32,7 +32,7 @@ class MachineLearning:
     def feature_scaling(self, dataset):
         return dataset
     
-    def train_model(self, train_file_path, 
+    def train_model(self, train_file_path=None, 
                           test_method="single points",
                           test_file_path=None, 
                           algo='auto', 

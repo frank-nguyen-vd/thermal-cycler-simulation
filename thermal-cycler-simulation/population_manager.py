@@ -15,7 +15,7 @@ class PopulationManager:
                     pcr_model=None,
                     peltier_model=None,
                     pcr_model_path="best_pcr_trained_model.ml",
-                    peltier_model_path="best_pcr_trained_model.ml",
+                    peltier_model_path="best_peltier_trained_model.ml",
                     record_filepath="protocol.csv"):
         self.pcr_model = pcr_model
         self.peltier_model = peltier_model
