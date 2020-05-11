@@ -11,7 +11,7 @@ class Protocol:
                 nCycles=6, 
                 Tblock=25, 
                 Tamb=25, 
-                pcr_path="best_pcr_model.ml",                
+                pcr_path="points_pcr_model.ml",                
                 record_filepath="protocol.csv"):
         self.time = 0
         self.checkpoint = 0
