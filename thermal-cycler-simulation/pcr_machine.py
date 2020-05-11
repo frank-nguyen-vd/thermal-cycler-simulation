@@ -4,7 +4,7 @@ import joblib
 class  PCR_Machine:
     def __init__(self, 
                  pcr_model=None,
-                 path_to_model="default_pcr_model.ml", 
+                 path_to_model=None, 
                  sample_volume=10, 
                  sample_temp=60, 
                  block_temp=60, 

@@ -13,14 +13,18 @@ class PopulationManager:
                     mutation_chance=0.01,
                     stagnant_period=10,
                     pcr_model=None,
-                    pcr_model_path="points_pcr_model.ml",
+                    points_model_path="points_pcr_model.ml",
+                    profile_model_path="profile_pcr_model.ml",
+                    hybrid_model_path="hybrid_pcr_model.ml",
                     record_filepath="protocol.csv"):
         self.pcr_model = pcr_model        
         self.pop_size = pop_size
         self.max_generation = max_generation
         self.mutation_chance = mutation_chance
         self.stagnant_period = stagnant_period
-        self.pcr_model_path = pcr_model_path        
+        self.points_model_path = points_model_path
+        self.profile_model_path = profile_model_path
+        self.hybrid_model_path = hybrid_model_path
         self.record_filepath = record_filepath
 
     def create_population(self, pop_size):
@@ -34,10 +38,10 @@ class PopulationManager:
         population.append(self.create_genius())
         return population
 
-    def init_environment(self, block_temp=60, amb_temp=25, update_period=0.05, sample_volume=10):
+    def init_environment(self, strategy, block_temp=60, amb_temp=25, update_period=0.05, sample_volume=10):
         
         pcr_machine = PCR_Machine(  pcr_model=self.pcr_model,
-                                    path_to_model=self.pcr_model_path,
+                                    path_to_model=strategy,
                                     sample_volume=sample_volume,
                                     sample_temp=block_temp,
                                     block_temp=block_temp,
@@ -114,11 +118,11 @@ class PopulationManager:
         new_pop.append(self.create_genius())
         return new_pop
 
-    def eval_fitness_score(self, creature, update_period=0.05, dt=0.05):
+    def eval_fitness_score(self, creature, strategy, update_period=0.05, dt=0.05):
         setpoint1 = 60
         setpoint2 = 95
         hold_time = 10
-        pcr, tbc = self.init_environment(block_temp=setpoint1, update_period=update_period)
+        pcr, tbc = self.init_environment(strategy=strategy, block_temp=setpoint1, update_period=update_period)
         creature.blend_in(tbc)
         creature.score = 0
         tbc.ramp_to(new_set_point=setpoint2, sample_rate=100)
@@ -139,7 +143,7 @@ class PopulationManager:
             creature.score -= 1000
             # giving the creature second chance to live
             creature.alive = True                    
-            pcr, tbc = self.init_environment(block_temp=setpoint2, update_period=update_period)
+            pcr, tbc = self.init_environment(strategy=strategy, block_temp=setpoint2, update_period=update_period)
             creature.blend_in(tbc)
             tbc.ramp_to(new_set_point=setpoint2, sample_rate=100)                    
         else:
@@ -229,18 +233,26 @@ class PopulationManager:
         creature.blend_in(protocol.tbc_controller)
         protocol.run(record_mode='a')  
 
-    def run(self):
+    def run(self, stone_age=-200, bronze_age=-50):
         population = []
         best_creature = DNA(PID_Specs())
         best_creature.score = -1000000
         best_pop_score = -1000000
+        pop_score = -1000000
         cgeneration = 0
         for noGeneration in range(0, self.max_generation):
             population = self.breed_population(population)
             print(f"-------- Generation={noGeneration} Population={len(population)}")
             
+            if pop_score < stone_age:
+                strategy = self.points_model_path
+            elif pop_score < bronze_age:
+                strategy = self.profile_model_path
+            else:
+                strategy = self.hybrid_model_path
+
             for loc, creature in enumerate(population):
-                self.eval_fitness_score(creature)                
+                self.eval_fitness_score(creature=creature, strategy=strategy)                
                 print(f"Creature {loc} scores {creature.score} fitness points")
 
             population.sort(key=self.getScore, reverse=True)
@@ -280,13 +292,15 @@ class PopulationManager:
           
 
 if __name__ == "__main__":
-    max_gen = 100
+    max_gen = 500
     max_pop = 20
     popMan = PopulationManager( max_generation=max_gen, 
                                 pop_size=max_pop, 
                                 mutation_chance=0.0222,
                                 stagnant_period=25,
-                                pcr_model_path="profile_pcr_model.ml",
+                                points_model_path="points_pcr_model.ml",
+                                profile_model_path="profile_pcr_model.ml",
+                                hybrid_model_path="hybrid_pcr_model.ml",
                                 record_filepath=f"pop{max_pop}gen{max_gen}.csv",
                               )    
     popMan.run()
