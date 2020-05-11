@@ -42,7 +42,7 @@ class MachineLearning:
         if algo == "auto":
             list_models = []
             list_names = []
-            print("--- Evaluating the score of all regressors")
+            print("--- Evaluating all regressors in {test_method} evaluation ---")
             list_models.append( MLPRegressor(hidden_layer_sizes=(8,8,8,),
                                 activation='relu',
                                 solver='adam',
@@ -79,12 +79,12 @@ class MachineLearning:
                                         test_path=test_path,
                                         )
                 if report:
-                    print(f"{list_names[loc]} scores {score}")
+                    print(f"{list_names[loc]} scores {score} in {test_method} evaluation")
                 if score > max_score:
                     max_score = score
                     model_loc = loc
             if report:
-                print(f"--- The best regressor is {list_names[model_loc]} which scores {max_score}\n")
+                print(f"--- The best regressor is {list_names[model_loc]} which scores {max_score} in {test_method} evaluation\n")
             
             return list_models[model_loc], max_score
         else:
