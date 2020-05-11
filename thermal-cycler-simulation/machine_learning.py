@@ -190,7 +190,12 @@ class MachineLearning:
 
 if __name__ == "__main__":
     learning = MachineLearning()
-    best_pcr, best_peltier = learning.pickBestMLmodels(test_method="single points")
-    learning.save_model(best_pcr, "default_pcr_model.ml")
-    learning.save_model(best_peltier, "default_peltier_model.ml")
+
+    # best_pcr, best_peltier = learning.pickBestMLmodels(test_method="single points")
+    # learning.save_model(best_pcr, "default_pcr_model.ml")
+    # learning.save_model(best_peltier, "default_peltier_model.ml")
+
+    best_pcr, best_peltier = learning.pickBestMLmodels(test_method="thermal profile")
+    learning.save_model(best_pcr, "best_pcr_model.ml")
+    learning.save_model(best_peltier, "best_peltier_model.ml")    
 
