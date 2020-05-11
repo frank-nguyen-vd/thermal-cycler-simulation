@@ -10,33 +10,36 @@ from peltier import Peltier
 class PopulationManager:
     def __init__(self, pop_size=100,
                     max_generation=50,
-                    mutation_chance=0.01,
-                    stagnant_period=10,
+                    mutation_chance=0.01,                    
                     pcr_model=None,
                     points_model_path="points_pcr_model.ml",
                     profile_model_path="profile_pcr_model.ml",
-                    hybrid_model_path="hybrid_pcr_model.ml",
-                    record_filepath="protocol.csv"):
+                    hybrid_model_path="hybrid_pcr_model.ml",                    
+                ):
         self.pcr_model = pcr_model        
         self.pop_size = pop_size
         self.max_generation = max_generation
-        self.mutation_chance = mutation_chance
-        self.stagnant_period = stagnant_period
+        self.mutation_chance = mutation_chance        
         self.points_model_path = points_model_path
         self.profile_model_path = profile_model_path
-        self.hybrid_model_path = hybrid_model_path
-        self.record_filepath = record_filepath
+        self.hybrid_model_path = hybrid_model_path        
+        
 
-    def create_population(self, pop_size):
+    def create_population(self, pop_size, genius=True):
         population = []
         
         for i in range(0, pop_size - 1):
             creature = DNA(PID_Specs())
             creature.rand_DNA()
             population.append(creature)
-        
-        population.append(self.create_genius())
-        return population
+
+        if genius:
+            creature =self.create_genius()
+        else:
+            creature = DNA(PID_Specs())
+            creature.rand_DNA()
+
+        return population.append(creature)        
 
     def init_environment(self, strategy, block_temp=60, amb_temp=25, update_period=0.05, sample_volume=10):
         
@@ -93,15 +96,17 @@ class PopulationManager:
                         ]
         return genius
 
-    def breed_population(self, population):
+    def breed_population(self, population, genius=True):
         if population == []:
-            return self.create_population(self.pop_size)
+            return self.create_population(pop_size=self.pop_size, genius=genius)
 
         if len(population) <= 1:
             print("ERROR: Only one creature left. Population is dead.")
             raise Exception
 
         new_pop = []
+        if genius:
+            new_pop.append(self.create_genius())
         size = len(population) - 1
         count_creatures = 2
         for i, dad in enumerate(population):            
@@ -113,9 +118,8 @@ class PopulationManager:
                 mom = population[j]
                 new_pop.append(self.mate(dad, mom))
                 count_creatures += 1
-                if count_creatures >= self.pop_size:
-                    break        
-        new_pop.append(self.create_genius())
+        if genius:
+            new_pop.pop()
         return new_pop
 
     def eval_fitness_score(self, creature, strategy, update_period=0.05, dt=0.05):
@@ -227,13 +231,13 @@ class PopulationManager:
                             nCycles  =1, 
                             Tblock   =60, 
                             Tamb     =25,
-                            pcr_path=self.pcr_model_path,
+                            pcr_path=self.hybrid_model_path,
                             record_filepath=filepath
                             )
         creature.blend_in(protocol.tbc_controller)
         protocol.run(record_mode='a')  
 
-    def run(self, stone_age=-200, bronze_age=-50):
+    def run(self, stone_age=-200, bronze_age=-50, record_path=None, genius=True, stagnant_period=50):
         population = []
         best_creature = DNA(PID_Specs())
         best_creature.score = -1000000
@@ -241,7 +245,7 @@ class PopulationManager:
         pop_score = -1000000
         cgeneration = 0
         for noGeneration in range(0, self.max_generation):
-            population = self.breed_population(population)
+            population = self.breed_population(population=population, genius=genius)
             print(f"-------- Generation={noGeneration} Population={len(population)}")
             
             if pop_score < stone_age:
@@ -270,8 +274,8 @@ class PopulationManager:
             if pop_score > best_pop_score:
                 best_pop_score = pop_score
                 cgeneration = 0
-            elif cgeneration >= self.stagnant_period:
-                print(f"WARNING: Population hasn't improved its score {best_pop_score} for {self.stagnant_period} generations. Algorithm ends.\n")
+            elif cgeneration >= stagnant_period:
+                print(f"WARNING: Population hasn't improved its score {best_pop_score} for {stagnant_period} generations. Algorithm ends.\n")
                 break
             else:
                 cgeneration += 1
@@ -288,19 +292,22 @@ class PopulationManager:
             KD = best_creature.genes[5 * k + 4]                
             print(f"Stage {group_name[k]}: P={P:.4f} I={I:.4f} D={D:.4f} KI={KI:.4f} KD={KD:.4f}")
             
-        self.export_creature(best_creature, self.record_filepath[:-4] + f"score{int(best_creature.score)}" + self.record_filepath[-4:])
+        self.export_creature(best_creature, record_path[:-4] + f"score{int(best_creature.score)}" + record_path[-4:])
           
 
 if __name__ == "__main__":
-    max_gen = 500
+    max_gen = 1000
     max_pop = 20
     popMan = PopulationManager( max_generation=max_gen, 
                                 pop_size=max_pop, 
-                                mutation_chance=0.0222,
-                                stagnant_period=25,
+                                mutation_chance=0.0222,                                
                                 points_model_path="points_pcr_model.ml",
                                 profile_model_path="profile_pcr_model.ml",
-                                hybrid_model_path="hybrid_pcr_model.ml",
-                                record_filepath=f"pop{max_pop}gen{max_gen}.csv",
+                                hybrid_model_path="hybrid_pcr_model.ml",                                
                               )    
-    popMan.run()
+    popMan.run(record_path=f"pop{max_pop}gen{max_gen}.csv", 
+               genius=True, 
+               stagnant_period=50,
+               stone_age=-200,
+               bronze_age=-50,
+              )
