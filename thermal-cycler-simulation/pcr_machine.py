@@ -3,21 +3,26 @@ import joblib
 
 class  PCR_Machine:
     def __init__(self, 
-                 path_to_model, 
-                 sample_volume, 
-                 sample_temp, 
-                 block_temp, 
-                 heat_sink_temp, 
+                 pcr_model=None,
+                 path_to_model="default_pcr_model.ml", 
+                 sample_volume=10, 
+                 sample_temp=60, 
+                 block_temp=60, 
+                 heat_sink_temp=25, 
                  block_rate=0, 
                  sample_rate=0,                 
                  amb_temp=25,
                  update_period=0.05,
                  start_time=0
                 ):
-        self.model = self.load_model(path_to_model)
+        if pcr_model == None:
+            self.pcr_model = self.load_model(path_to_model)
+        else:
+            self.pcr_model = pcr_model
         self.sample_volume = sample_volume
         self.sample_temp = sample_temp
         self.block_temp = block_temp
+        self.prev_block_temp = block_temp
         self.heat_sink_temp = heat_sink_temp
         self.block_rate = block_rate
         self.sample_rate = sample_rate
@@ -29,7 +34,9 @@ class  PCR_Machine:
         self.Iset = 0
         self.Imeasure = 0
         self.Vset = 0
-        
+        self.FIR_Filter = [0.0264, 0.1405, 0.3331, 0.3331, 0.1405, 0.0264]
+        self.BlkTempData = [block_temp] * 5
+        self.SmpRateData = [0] * 5
     
     def load_model(self, path):
         return joblib.load(path)
@@ -45,44 +52,58 @@ class  PCR_Machine:
             self.cool_const += cool_coeffs[i] * volume**i
         self.heat_conv = 1 - math.exp(-self.period / self.heat_const)
         self.cool_conv = 1 - math.exp(-self.period / self.cool_const)
-        
-    def update_sample_params(self, new_block_temp):
-        if new_block_temp > self.block_temp: # block is heating up
+
+    def calcBlockInfo(self, new_block_temp):
+        new_data = self.FIR_Filter[0] * new_block_temp
+        for i in range(0, len(self.BlkTempData)):
+            new_data += self.FIR_Filter[i + 1] * self.BlkTempData[i]
+        self.BlkTempData.pop()
+        self.BlkTempData.insert(0, new_block_temp)
+        self.block_rate = (new_data - self.prev_block_temp) / self.period
+        self.prev_block_temp = new_data
+        self.block_temp = new_block_temp
+
+    def calcSampleInfo(self, new_block_temp, isHeating):
+        if isHeating:
             conv_const = self.heat_conv
-        else: # block is cooling down
-            conv_const = self.cool_conv        
-        new_sample_temp = self.sample_temp + conv_const * (new_block_temp - self.sample_temp)            
-        self.sample_rate = (new_sample_temp - self.sample_temp) / self.period
-        self.sample_temp = new_sample_temp
-    
-    def update_heat_sink_temp(self, new_block_temp):
-        delta_Tblock = abs(new_block_temp - self.block_temp)
-        if delta_Tblock > 0: # block is heating up
+        else:
+            conv_const = self.cool_conv
+
+        # update sample 
+        new_sample_temp = self.sample_temp + conv_const * (new_block_temp - self.sample_temp)
+        new_sample_rate = (new_sample_temp - self.sample_temp) / self.period
+
+        self.SmpRateData.pop(0)
+        self.SmpRateData.append(new_sample_rate)
+
+        self.sample_rate = sum(self.SmpRateData) / 5
+        self.sample_temp = new_sample_temp    
+
+    def calcHeatSinkInfo(self, d_Tblock):
+        if d_Tblock > 0: # block is heating up            
             # for peltier, when block is heated up, the heat sink is cooled down
-            self.heat_sink_temp -= 0.01 * delta_Tblock 
-        else: # block is cooling down
+            self.heat_sink_temp -= 0.01 * d_Tblock 
+
+        else: # block is cooling down            
             # for peltier, when block is cooled down, the heat sink is heated up
-            self.heat_sink_temp += 0.02 * delta_Tblock
+            self.heat_sink_temp -= 0.1 * d_Tblock
+
         # heat sink temp is heated up by block temperature
-        self.heat_sink_temp += 0.001 * (new_block_temp - self.heat_sink_temp)
+        self.heat_sink_temp += 0.001 * (self.block_temp - self.heat_sink_temp)
         # heat sink temp is cooled by fan
-        self.heat_sink_temp -= 0.007 * (self.heat_sink_temp - self.amb_temp)
-    
+        self.heat_sink_temp -= 0.007 * (self.heat_sink_temp - self.amb_temp)        
+
     def update(self):
         condition = [self.sample_volume,                     
                      self.block_temp,
                      self.block_rate,
-                     self.Iset,
                      self.Imeasure,
-                     self.Vset
-                    ]
-        new_block_rate = self.model.predict([condition])[0]
-        delta_rate = (new_block_rate - self.block_rate) / 0.2 * self.period        
-        self.block_rate += delta_rate
-        new_block_temp = self.block_temp + self.block_rate * self.period
-        self.update_heat_sink_temp(new_block_temp)
-        self.update_sample_params(new_block_temp)
-        self.block_temp = new_block_temp
+                    ]        
+        d_Tblock = (self.pcr_model.predict([condition])[0] - self.block_temp) * self.period / 0.2
+        new_block_temp = self.block_temp + d_Tblock
+        self.calcBlockInfo(new_block_temp)
+        self.calcSampleInfo(new_block_temp, d_Tblock > 0)
+        self.calcHeatSinkInfo(d_Tblock)
 
     def is_timer_fired(self):
         if round(self.time - self.checkpoint, 3) >= self.period:
