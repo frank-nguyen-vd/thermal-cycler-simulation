@@ -85,17 +85,15 @@ class MachineLearning:
             for loc in range(0, len(list_models)):
                 list_models[loc] = list_models[loc].fit(train_condition, train_result)
                 if pcr_model == None:
-                    pcr_model = list_models[loc]
                     score = self.test_model(test_method=test_method,
-                                            pcr_model=pcr_model,
+                                            pcr_model=list_models[loc],
                                             peltier_model=peltier_model,
                                             test_file_path=test_file_path,
                                            )
                 else:
-                    peltier_model = list_models[loc]
                     score = self.test_model(test_method=test_method,
                                             pcr_model=pcr_model,
-                                            peltier_model=peltier_model,
+                                            peltier_model=list_models[loc],
                                             test_file_path=test_file_path,
                                            )
 
@@ -147,7 +145,7 @@ class MachineLearning:
                             peltier_test_path="test/peltier_testing_set.csv",                            
                             default_pcr_path="default_pcr_model.ml",
                             default_peltier_path="default_peltier_model.ml",
-                            max_iters=10,
+                            max_iters=1,
                         ):        
         best_score = -1000000
         best_pcr_model = None
