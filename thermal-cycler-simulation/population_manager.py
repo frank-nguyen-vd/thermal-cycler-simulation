@@ -7,10 +7,15 @@ from random import random
 from protocol import Protocol
 
 class PopulationManager:
-    def __init__(self, pop_size=100, max_generation=50, mutation_chance=0.01, record_filepath="protocol.csv"):
+    def __init__(self, pop_size=100, 
+                    max_generation=50, 
+                    mutation_chance=0.01, 
+                    stagnant_period=10,
+                    record_filepath="protocol.csv"):
         self.pop_size = pop_size
         self.max_generation = max_generation
         self.mutation_chance = mutation_chance
+        self.stagnant_period = stagnant_period
         self.record_filepath = record_filepath
 
     def create_population(self, pop_size):
@@ -25,7 +30,7 @@ class PopulationManager:
         return population
 
     def init_environment(self, block_temp=60, amb_temp=25, update_period=0.05, sample_volume=10):
-        pcr_machine = PCR_Machine(      "pcr_trained_model.ml",
+        pcr_machine = PCR_Machine(      "best_pcr_trained_model.ml",
                                         sample_volume=sample_volume,
                                         sample_temp=block_temp,
                                         block_temp=block_temp,
@@ -72,7 +77,6 @@ class PopulationManager:
                         10,0.03,0,2,5
                         ]
         return genius
-
 
     def breed_population(self, population):
         if population == []:
@@ -148,10 +152,10 @@ class PopulationManager:
             elif setpoint2 - pcr.sample_temp > down_deviation:
                 down_deviation = setpoint2 - pcr.sample_temp
             
-        if up_deviation > 0.1:
-            creature.score -= (up_deviation - 0.1) * 50
-        if down_deviation > 0.1:
-            creature.score -= (down_deviation - 0.1) * 50
+        if up_deviation > 0.25:
+            creature.score -= up_deviation * 50
+        if down_deviation > 0.25:
+            creature.score -= down_deviation * 50
         
         tbc.ramp_to(new_set_point=setpoint1, sample_rate=100)
         time_limit = 2.5 * (setpoint2 - setpoint1) / tbc.max_down_ramp
@@ -213,35 +217,60 @@ class PopulationManager:
 
     def run(self):
         population = []
+        best_creature = DNA(PID_Specs())
+        best_creature.score = -1000000
+        best_pop_score = -1000000
+        cgeneration = 0
         for noGeneration in range(0, self.max_generation):
             population = self.breed_population(population)
             print(f"-------- Generation={noGeneration} Population={len(population)}")
+            
             for loc, creature in enumerate(population):
-                self.eval_fitness_score(creature)
+                self.eval_fitness_score(creature)                
                 print(f"Creature {loc} scores {creature.score} fitness points")
 
             population.sort(key=self.getScore, reverse=True)
-            for i in range(0, self.pop_size // 2):
+            if population[0].score > best_creature.score:
+                best_creature.genes = population[0].genes.copy()
+            pop_score = 0
+            pop_size = self.pop_size // 2
+            for i in range(0, pop_size):
+                pop_score += population[i].score
                 population.pop()
-            
+            pop_score = pop_score / pop_size
+            print(f"*** Generation {noGeneration} scores {pop_score} fitness points\n\n")
 
-        population.sort(key=self.getScore, reverse=True)
+            if pop_score > best_pop_score:
+                best_pop_score = pop_score
+                cgeneration = 0
+            elif cgeneration >= self.stagnant_period:
+                print(f"WARNING: Population hasn't improved its score {best_pop_score} for {self.stagnant_period} generations. Algorithm ends.\n")
+                break
+            else:
+                cgeneration += 1
+
+
         print("==============================================================")
-        print(f"The best score is {population[0].score} fitness points")
+        print(f"The best creature score is {best_creature.score} fitness points")
         group_name = ["Ramp Up", "Overshoot Over", "Hold Over", "Land Over", "Hold", "Ramp Down", "Overshoot Under", "Hold Under", "Land Under"]
         for k in range(0, 9):
-            P  = population[0].genes[5 * k]
-            I  = population[0].genes[5 * k + 1]
-            D  = population[0].genes[5 * k + 2]
-            KI = population[0].genes[5 * k + 3]
-            KD = population[0].genes[5 * k + 4]                
+            P  = best_creature.genes[5 * k]
+            I  = best_creature.genes[5 * k + 1]
+            D  = best_creature.genes[5 * k + 2]
+            KI = best_creature.genes[5 * k + 3]
+            KD = best_creature.genes[5 * k + 4]                
             print(f"Stage {group_name[k]}: P={P:.4f} I={I:.4f} D={D:.4f} KI={KI:.4f} KD={KD:.4f}")
             
-        self.export_creature(population[0], self.record_filepath)
+        self.export_creature(best_creature, self.record_filepath[:-4] + f"score{int(best_creature.score)}" + self.record_filepath[-4:])
         
     
           
 
 if __name__ == "__main__":
-    popMan = PopulationManager(max_generation=200, pop_size=100, mutation_chance=0.01, record_filepath="protocol.csv")
+    max_gen = 200
+    max_pop = 20
+    popMan = PopulationManager( max_generation=max_gen, 
+                                pop_size=max_pop, 
+                                mutation_chance=0.05, 
+                                record_filepath=f"pop{max_pop}gen{max_gen}.csv")    
     popMan.run()
