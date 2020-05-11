@@ -231,6 +231,7 @@ class PopulationManager:
 
             population.sort(key=self.getScore, reverse=True)
             if population[0].score > best_creature.score:
+                best_creature.score = population[0].score
                 best_creature.genes = population[0].genes.copy()
             pop_score = 0
             pop_size = self.pop_size // 2
@@ -267,10 +268,11 @@ class PopulationManager:
           
 
 if __name__ == "__main__":
-    max_gen = 200
+    max_gen = 1000
     max_pop = 20
     popMan = PopulationManager( max_generation=max_gen, 
                                 pop_size=max_pop, 
-                                mutation_chance=0.05, 
+                                mutation_chance=0.1,
+                                stagnant_period=50,
                                 record_filepath=f"pop{max_pop}gen{max_gen}.csv")    
     popMan.run()
