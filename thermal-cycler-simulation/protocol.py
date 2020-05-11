@@ -120,7 +120,9 @@ if __name__ == "__main__":
                         listHold =[ 15,  15], 
                         nCycles  =1, 
                         Tblock   =60, 
-                        Tamb     =25
+                        Tamb     =25,
+                        pcr_path = "hybrid_pcr_model.ml",
+                        record_filepath="protocol.csv",
                         )
     protocol.run()
 

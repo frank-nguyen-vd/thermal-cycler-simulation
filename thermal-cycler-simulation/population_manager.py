@@ -8,12 +8,12 @@ from protocol import Protocol
 from peltier import Peltier
 
 class PopulationManager:
-    def __init__(self, pop_size=100, 
-                    max_generation=50, 
-                    mutation_chance=0.01, 
+    def __init__(self, pop_size=100,
+                    max_generation=50,
+                    mutation_chance=0.01,
                     stagnant_period=10,
-                    pcr_model=None,                    
-                    pcr_model_path="best_pcr_model.ml",                    
+                    pcr_model=None,
+                    pcr_model_path="best_pcr_model.ml",
                     record_filepath="protocol.csv"):
         self.pcr_model = pcr_model        
         self.pop_size = pop_size
@@ -287,5 +287,7 @@ if __name__ == "__main__":
                                 pop_size=max_pop, 
                                 mutation_chance=0.0222,
                                 stagnant_period=25,
-                                record_filepath=f"pop{max_pop}gen{max_gen}.csv")    
+                                pcr_model_path="hybrid_pcr_model.ml",
+                                record_filepath=f"pop{max_pop}gen{max_gen}.csv",
+                              )    
     popMan.run()
