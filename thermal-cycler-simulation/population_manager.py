@@ -5,17 +5,26 @@ from tbc_controller import TBC_Controller
 from random import randint
 from random import random
 from protocol import Protocol
+from peltier import Peltier
 
 class PopulationManager:
     def __init__(self, pop_size=100, 
                     max_generation=50, 
                     mutation_chance=0.01, 
                     stagnant_period=10,
+                    pcr_model=None,
+                    peltier_model=None,
+                    pcr_model_path="best_pcr_trained_model.ml",
+                    peltier_model_path="best_pcr_trained_model.ml",
                     record_filepath="protocol.csv"):
+        self.pcr_model = pcr_model
+        self.peltier_model = peltier_model
         self.pop_size = pop_size
         self.max_generation = max_generation
         self.mutation_chance = mutation_chance
         self.stagnant_period = stagnant_period
+        self.pcr_model_path = pcr_model_path
+        self.peltier_model_path = peltier_model_path
         self.record_filepath = record_filepath
 
     def create_population(self, pop_size):
@@ -30,19 +39,26 @@ class PopulationManager:
         return population
 
     def init_environment(self, block_temp=60, amb_temp=25, update_period=0.05, sample_volume=10):
-        pcr_machine = PCR_Machine(      "best_pcr_trained_model.ml",
-                                        sample_volume=sample_volume,
-                                        sample_temp=block_temp,
-                                        block_temp=block_temp,
-                                        heat_sink_temp=amb_temp,
-                                        block_rate=0,
-                                        sample_rate=0,                                        
-                                        amb_temp=amb_temp,
-                                        update_period=update_period,
-                                        start_time=0
+        
+        pcr_machine = PCR_Machine(  pcr_model=self.pcr_model,
+                                    path_to_model=self.pcr_model_path,
+                                    sample_volume=sample_volume,
+                                    sample_temp=block_temp,
+                                    block_temp=block_temp,
+                                    heat_sink_temp=amb_temp,
+                                    block_rate=0,
+                                    sample_rate=0,                                        
+                                    amb_temp=amb_temp,
+                                    update_period=update_period,
+                                    start_time=0
                                         
         )
-        tbc_controller = TBC_Controller(    pcr_machine,
+
+        peltier = Peltier(peltier_model=self.peltier_model, path_to_model=self.peltier_model_path)
+
+            
+        tbc_controller = TBC_Controller(    PCR_Machine_Model=pcr_machine,
+                                            Peltier_Model=peltier,
                                             start_time=0,
                                             update_period=update_period,
                                             volume=10
@@ -106,7 +122,7 @@ class PopulationManager:
     def eval_fitness_score(self, creature, update_period=0.05, dt=0.05):
         setpoint1 = 60
         setpoint2 = 95
-        hold_time = 35
+        hold_time = 10
         pcr, tbc = self.init_environment(block_temp=setpoint1, update_period=update_period)
         creature.blend_in(tbc)
         creature.score = 0
@@ -178,6 +194,8 @@ class PopulationManager:
             creature.score -= abs(avg_rate - tbc.max_down_ramp) / tbc.max_down_ramp * 100
             if down_deviation > 0.25:
                 creature.score -= down_deviation * 50
+
+        return creature.score
 
     def export_creature(self, creature, filepath):
         import csv
@@ -272,7 +290,7 @@ if __name__ == "__main__":
     max_pop = 20
     popMan = PopulationManager( max_generation=max_gen, 
                                 pop_size=max_pop, 
-                                mutation_chance=0.1,
+                                mutation_chance=0.0222,
                                 stagnant_period=50,
                                 record_filepath=f"pop{max_pop}gen{max_gen}.csv")    
     popMan.run()

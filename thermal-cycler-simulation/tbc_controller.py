@@ -4,8 +4,9 @@ from peltier import Peltier
 from math import exp
 
 class TBC_Controller:
-    def __init__(self, PCR_Machine, start_time=0, update_period=0.05, volume=10):
-        self.pcr = PCR_Machine
+    def __init__(self, PCR_Machine_Model, Peltier_Model, start_time=0, update_period=0.05, volume=10):
+        self.pcr = PCR_Machine_Model
+        self.peltier = Peltier_Model
         self.time = self.checkpoint = self.start_time = start_time              
         self.period = update_period
         self.volume = volume
@@ -16,8 +17,7 @@ class TBC_Controller:
         self.unachievable = 10
         self.smpWinInRampUpFlag = False
         self.smpWinInRampDownFlag = False
-        self.init_pid()
-        self.init_peltier()        
+        self.init_pid()        
         self.load_tuning_params()
         self.pid.load(self.pid_const, "Hold")
         self.max_up_ramp = self.calc_poly_eqn(self.upRrEqn, self.volume)
@@ -26,10 +26,6 @@ class TBC_Controller:
     
     def calc_poly_eqn(self, eqn, vol):
         return sum([vol**deg * coeff for deg, coeff in enumerate(eqn)])
-    
-    def init_peltier(self):
-        self.peltier = Peltier()
-        self.peltier.mode = "heat"
     
     def init_pid(self):
         self.pid = PID_Controller()

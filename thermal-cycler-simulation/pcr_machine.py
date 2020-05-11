@@ -3,18 +3,22 @@ import joblib
 
 class  PCR_Machine:
     def __init__(self, 
-                 path_to_model, 
-                 sample_volume, 
-                 sample_temp, 
-                 block_temp, 
-                 heat_sink_temp, 
+                 pcr_model=None,
+                 path_to_model="pcr_trained_model.ml", 
+                 sample_volume=10, 
+                 sample_temp=60, 
+                 block_temp=60, 
+                 heat_sink_temp=25, 
                  block_rate=0, 
                  sample_rate=0,                 
                  amb_temp=25,
                  update_period=0.05,
                  start_time=0
                 ):
-        self.model = self.load_model(path_to_model)
+        if pcr_model == None:
+            self.pcr_model = self.load_model(path_to_model)
+        else:
+            self.pcr_model = pcr_model
         self.sample_volume = sample_volume
         self.sample_temp = sample_temp
         self.block_temp = block_temp
@@ -95,7 +99,7 @@ class  PCR_Machine:
                      self.block_rate,
                      self.Imeasure,
                     ]        
-        d_Tblock = (self.model.predict([condition])[0] - self.block_temp) * self.period / 0.2
+        d_Tblock = (self.pcr_model.predict([condition])[0] - self.block_temp) * self.period / 0.2
         new_block_temp = self.block_temp + d_Tblock
         self.calcBlockInfo(new_block_temp)
         self.calcSampleInfo(new_block_temp, d_Tblock > 0)
