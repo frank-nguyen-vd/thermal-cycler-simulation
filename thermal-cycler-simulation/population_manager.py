@@ -38,8 +38,8 @@ class PopulationManager:
         else:
             creature = DNA(PID_Specs())
             creature.rand_DNA()
-
-        return population.append(creature)        
+        population.append(creature)
+        return population
 
     def init_environment(self, strategy, block_temp=60, amb_temp=25, update_period=0.05, sample_volume=10):
         
@@ -231,11 +231,10 @@ class PopulationManager:
                             nCycles  =1, 
                             Tblock   =60, 
                             Tamb     =25,
-                            pcr_path=self.hybrid_model_path,
-                            record_filepath=filepath
+                            pcr_path=self.hybrid_model_path,                            
                             )
         creature.blend_in(protocol.tbc_controller)
-        protocol.run(record_mode='a')  
+        protocol.run(record_path=filepath, record_mode='a')  
 
     def run(self, stone_age=-200, bronze_age=-50, record_path=None, genius=True, stagnant_period=50):
         population = []
@@ -296,7 +295,7 @@ class PopulationManager:
           
 
 if __name__ == "__main__":
-    max_gen = 1000
+    max_gen = 2000
     max_pop = 20
     popMan = PopulationManager( max_generation=max_gen, 
                                 pop_size=max_pop, 
@@ -306,7 +305,7 @@ if __name__ == "__main__":
                                 hybrid_model_path="hybrid_pcr_model.ml",                                
                               )    
     popMan.run(record_path=f"pop{max_pop}gen{max_gen}.csv", 
-               genius=True, 
+               genius=False, 
                stagnant_period=50,
                stone_age=-200,
                bronze_age=-50,

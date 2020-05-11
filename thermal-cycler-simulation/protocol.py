@@ -12,7 +12,7 @@ class Protocol:
                 Tblock=25, 
                 Tamb=25, 
                 pcr_path="points_pcr_model.ml",                
-                record_filepath="protocol.csv"):
+                ):
         self.time = 0
         self.checkpoint = 0
         self.record_period = 0.2
@@ -21,8 +21,7 @@ class Protocol:
         self.listSP = listSP
         self.listRate = listRate
         self.listHold = listHold
-        self.nCycles = nCycles
-        self.record_filepath = record_filepath
+        self.nCycles = nCycles        
         self.pcr_machine = PCR_Machine( path_to_model=pcr_path,
                                         sample_volume=10,
                                         sample_temp=Tblock,
@@ -88,7 +87,7 @@ class Protocol:
             self.record()
             self.checkpoint = self.time
 
-    def run(self, record_mode='w'):
+    def run(self, record_path="", record_mode='w'):
         for i in range(0, self.nCycles):
             for setpoint, rate, hold_time in zip(self.listSP, self.listRate, self.listHold):
                 self.tbc_controller.ramp_to(setpoint, rate)
@@ -102,7 +101,8 @@ class Protocol:
                     ctime += self.dt
                     if ctime >= time_limit:
                         print("ERROR: Ramp time exceeds the time limit.")
-                        self.protocolData.to_csv("protocol.csv", index=False)
+                        self.protocolData.to_csv(record_path, index=False, mode=record_mode)
+                        print(f"Protocol data are saved to {record_path}")
                         return
                 ctime = 0
                 print(f"Holding at {setpoint}")
@@ -111,8 +111,9 @@ class Protocol:
                     self.pcr_machine.tick(self.dt)                    
                     self.tick(self.dt)
                     ctime += self.dt
-        print("Saving protocol data")
-        self.protocolData.to_csv(self.record_filepath, index=False, mode=record_mode)
+        
+        self.protocolData.to_csv(record_path, index=False, mode=record_mode)
+        print(f"Protocol data are saved to {record_path}")
 
 if __name__ == "__main__":
     protocol = Protocol(listSP   =[ 95,  60], 
@@ -121,8 +122,7 @@ if __name__ == "__main__":
                         nCycles  =1, 
                         Tblock   =60, 
                         Tamb     =25,
-                        pcr_path = "hybrid_pcr_model.ml",
-                        record_filepath="protocol.csv",
+                        pcr_path = "hybrid_pcr_model.ml",                        
                         )
-    protocol.run()
+    protocol.run(record_path="protocol.csv", record_mode='w')
 
