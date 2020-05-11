@@ -83,8 +83,7 @@ class DataHandler:
                 new_data = self.import_raw(volume=volume, path=path)
                 new_data = self.process_data(new_data)
                 pcr_data = self.select_columns(new_data, columns = [
-                                                                    'Volume',
-                                                                    'Heat Sink Temp',
+                                                                    'Volume',                                                                    
                                                                     'Block Temp',
                                                                     'Block Rate', 
                                                                     'Iset',
