@@ -27,13 +27,24 @@ class  PCR_Machine:
         self.time = start_time
         self.checkpoint = start_time
         self.calculate_conversion_constant(self.sample_volume)
-        self.Iset = 0
-        self.Imeasure = 0
+        self.Iset = 0        
         self.Vset = 0
         self.FIR_Filter = [0.0264, 0.1405, 0.3331, 0.3331, 0.1405, 0.0264]
         self.BlkTempData = [block_temp] * 5
         self.SmpRateData = [0] * 5
-        
+
+    def reset(self, sample_temp=60, block_temp=60, block_rate=0, sample_rate=0, time=0):
+        self.sample_temp = sample_temp
+        self.block_temp = block_temp
+        self.prev_block_temp = block_temp        
+        self.block_rate = block_rate
+        self.sample_rate = sample_rate                
+        self.time = time
+        self.checkpoint = time
+        self.calculate_conversion_constant(self.sample_volume)
+        self.BlkTempData = [block_temp] * 5
+        self.SmpRateData = [0] * 5        
+
     def calculate_conversion_constant(self, volume):
         heat_coeffs = [1.9017543860, 0.0604385965, -0.0000643860, 0.0000002982]
         cool_coeffs = [2.6573099415, 0.0906608187, -0.0006599415, 0.0000020760]     
