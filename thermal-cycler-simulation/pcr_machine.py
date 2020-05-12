@@ -103,6 +103,16 @@ class  PCR_Machine:
         d_Tblock = (self.pcr_model.predict([condition])[0] - self.block_temp) * self.period / 0.2
         new_block_temp = self.block_temp + d_Tblock
         self.calcBlockInfo(new_block_temp)
+
+        ################################################################################################ 
+        # IMPORTANT: This line of code helps to improve prediction accuracy                            #
+        # - Original algorithm used to calculate block_rate does not work well in simulation.          #  
+        #   It causes unresponsiveness in stages: Hold, Land Over, Land Under                          #
+        # - Block rate predicted by the ML model is faster but not sure if there is side-effect        #
+        # THEREFORE: Using the average of these two calculation methods for better simulation accuracy #
+        self.block_rate = (d_Tblock / self.period + self.block_rate) / 2
+        ################################################################################################ 
+
         self.calcSampleInfo(new_block_temp, d_Tblock > 0)
         self.calcHeatSinkInfo(d_Tblock)
 
