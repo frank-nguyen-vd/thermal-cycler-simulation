@@ -16,6 +16,20 @@ class DNA:
         self.max_up_deviation = 0
         self.max_down_deviation = 0
     
+    def copy(self):
+        clone                    = DNA()
+        clone.dna                = self.dna.copy()
+        clone.score              = self.score
+        clone.measured_up_rate   = self.measured_up_rate
+        clone.target_up_rate     = self.target_up_rate
+        clone.measured_down_rate = self.measured_down_rate
+        clone.target_down_rate   = self.target_down_rate
+        clone.heat_overshoot     = self.heat_overshoot
+        clone.cool_overshoot     = self.cool_overshoot
+        clone.max_up_deviation   = self.max_up_deviation
+        clone.max_down_deviation = self.max_down_deviation
+        return clone
+    
     def generate_PID_Specs(self):
         Pmin = 0.01 # P must be positive
         Pmax = 10
