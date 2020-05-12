@@ -47,10 +47,7 @@ class MachineLearning:
                                 max_iter=1000,))
             list_names.append("Neural Network")
 
-            list_models.append(RandomForestRegressor(n_estimators=10, n_jobs=-1, warm_start=False))
-            list_names.append("Random Forest")
-
-            list_models.append(BaggingRegressor(warm_start=True))
+            list_models.append(BaggingRegressor(warm_start=False))
             list_names.append("Bagging")
             
             list_models.append(VotingRegressor(list(zip(list_names, list_models))))
@@ -67,14 +64,14 @@ class MachineLearning:
                 score = self.test_model(pcr_model=list_models[loc], test_path=test_path,)
                 for test_method in ["single points", "thermal profile", "hybrid"]:
                     if report:                    
-                        print(f"{list_names[loc]} scores {score[test_method]} in {test_method} evaluation")
+                        print(f"{list_names[loc]} scores {score[test_method]:.2f} in {test_method} evaluation")
                     if score[test_method] > max_score[test_method]:
                         max_score[test_method] = score[test_method]
                         model_loc[test_method] = loc
             print("Conclusion:")
             for test_method in ["single points", "thermal profile", "hybrid"]:
                 if report:                    
-                    print(f"    - {list_names[model_loc[test_method]]} scores {max_score[test_method]}, the best in {test_method} evaluation")
+                    print(f"    - {list_names[model_loc[test_method]]} scores {max_score[test_method]:.2f}, the best in {test_method} evaluation")
                 best_model[test_method] = list_models[model_loc[test_method]]
                 model_name[test_method] = list_names[model_loc[test_method]]
             
@@ -128,7 +125,7 @@ class MachineLearning:
         if report:
             print("\n")
             for test_method in ["single points", "thermal profile", "hybrid"]:            
-                print(f"\n*** {best_technique[test_method]} scores {best_score[test_method]} after {max_iters} iterations in {test_method} evaluation\n")
+                print(f"\n*** {best_technique[test_method]} scores {best_score[test_method]:.2f} after {max_iters} iterations in {test_method} evaluation\n")
 
         return best_model
     
