@@ -308,8 +308,7 @@ class PopulationManager:
 
             population.sort(key=self.getScore, reverse=True)
             if population[0].score > best_creature.score:
-                best_creature.score = population[0].score
-                best_creature.dna = population[0].dna.copy()
+                best_creature = population[0].copy()                
             pop_score = 0
             pop_size = self.pop_size // 2
             for i in range(0, pop_size):
