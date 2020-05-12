@@ -4,7 +4,7 @@ import joblib
 class  PCR_Machine:
     def __init__(self, 
                  pcr_model=None,
-                 path_to_model="default_pcr_model.ml", 
+                 path_to_model=None, 
                  sample_volume=10, 
                  sample_temp=60, 
                  block_temp=60, 
@@ -97,7 +97,8 @@ class  PCR_Machine:
         condition = [self.sample_volume,                     
                      self.block_temp,
                      self.block_rate,
-                     self.Imeasure,
+                     self.Iset,
+                     self.Vset,
                     ]        
         d_Tblock = (self.pcr_model.predict([condition])[0] - self.block_temp) * self.period / 0.2
         new_block_temp = self.block_temp + d_Tblock

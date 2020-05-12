@@ -8,40 +8,43 @@ from protocol import Protocol
 from peltier import Peltier
 
 class PopulationManager:
-    def __init__(self, pop_size=100, 
-                    max_generation=50, 
-                    mutation_chance=0.01, 
-                    stagnant_period=10,
+    def __init__(self, pop_size=100,
+                    max_generation=50,
+                    mutation_chance=0.01,                    
                     pcr_model=None,
-                    peltier_model=None,
-                    pcr_model_path="default_pcr_model.ml",
-                    peltier_model_path="default_peltier_model.ml",
-                    record_filepath="protocol.csv"):
-        self.pcr_model = pcr_model
-        self.peltier_model = peltier_model
+                    fast_test="points_pcr_model.ml",
+                    detailed_test="profile_pcr_model.ml",
+                    accurate_test="hybrid_pcr_model.ml",                    
+                ):
+        self.pcr_model = pcr_model        
         self.pop_size = pop_size
         self.max_generation = max_generation
-        self.mutation_chance = mutation_chance
-        self.stagnant_period = stagnant_period
-        self.pcr_model_path = pcr_model_path
-        self.peltier_model_path = peltier_model_path
-        self.record_filepath = record_filepath
+        self.mutation_chance = mutation_chance        
+        self.fast_test = fast_test
+        self.detailed_test = detailed_test
+        self.accurate_test = accurate_test        
+        
 
-    def create_population(self, pop_size):
+    def create_population(self, pop_size, genius=True):
         population = []
         
         for i in range(0, pop_size - 1):
             creature = DNA(PID_Specs())
             creature.rand_DNA()
             population.append(creature)
-        
-        population.append(self.create_genius())
+
+        if genius:
+            creature =self.create_genius()
+        else:
+            creature = DNA(PID_Specs())
+            creature.rand_DNA()
+        population.append(creature)
         return population
 
-    def init_environment(self, block_temp=60, amb_temp=25, update_period=0.05, sample_volume=10):
+    def init_environment(self, strategy, block_temp=60, amb_temp=25, update_period=0.05, sample_volume=10):
         
         pcr_machine = PCR_Machine(  pcr_model=self.pcr_model,
-                                    path_to_model=self.pcr_model_path,
+                                    path_to_model=strategy,
                                     sample_volume=sample_volume,
                                     sample_temp=block_temp,
                                     block_temp=block_temp,
@@ -54,8 +57,7 @@ class PopulationManager:
                                         
         )
 
-        peltier = Peltier(peltier_model=self.peltier_model, path_to_model=self.peltier_model_path)
-
+        peltier = Peltier()
             
         tbc_controller = TBC_Controller(    PCR_Machine=pcr_machine,
                                             Peltier=peltier,
@@ -94,15 +96,17 @@ class PopulationManager:
                         ]
         return genius
 
-    def breed_population(self, population):
+    def breed_population(self, population, genius=True):
         if population == []:
-            return self.create_population(self.pop_size)
+            return self.create_population(pop_size=self.pop_size, genius=genius)
 
         if len(population) <= 1:
             print("ERROR: Only one creature left. Population is dead.")
             raise Exception
 
         new_pop = []
+        if genius:
+            new_pop.append(self.create_genius())
         size = len(population) - 1
         count_creatures = 2
         for i, dad in enumerate(population):            
@@ -114,16 +118,15 @@ class PopulationManager:
                 mom = population[j]
                 new_pop.append(self.mate(dad, mom))
                 count_creatures += 1
-                if count_creatures >= self.pop_size:
-                    break        
-        new_pop.append(self.create_genius())
+        if genius:
+            new_pop.pop()
         return new_pop
 
-    def eval_fitness_score(self, creature, update_period=0.05, dt=0.05):
+    def eval_fitness_score(self, creature, strategy, update_period=0.05, dt=0.05):
         setpoint1 = 60
         setpoint2 = 95
         hold_time = 10
-        pcr, tbc = self.init_environment(block_temp=setpoint1, update_period=update_period)
+        pcr, tbc = self.init_environment(strategy=strategy, block_temp=setpoint1, update_period=update_period)
         creature.blend_in(tbc)
         creature.score = 0
         tbc.ramp_to(new_set_point=setpoint2, sample_rate=100)
@@ -144,7 +147,7 @@ class PopulationManager:
             creature.score -= 1000
             # giving the creature second chance to live
             creature.alive = True                    
-            pcr, tbc = self.init_environment(block_temp=setpoint2, update_period=update_period)
+            pcr, tbc = self.init_environment(strategy=strategy, block_temp=setpoint2, update_period=update_period)
             creature.blend_in(tbc)
             tbc.ramp_to(new_set_point=setpoint2, sample_rate=100)                    
         else:
@@ -228,23 +231,31 @@ class PopulationManager:
                             nCycles  =1, 
                             Tblock   =60, 
                             Tamb     =25,
-                            record_filepath=filepath
+                            pcr_path=self.accurate_test,                            
                             )
         creature.blend_in(protocol.tbc_controller)
-        protocol.run(record_mode='a')  
+        protocol.run(record_path=filepath, record_mode='a')  
 
-    def run(self):
+    def run(self, stone_age=-800, golden_age=-40, record_path=None, genius=True, stagnant_period=50):
         population = []
         best_creature = DNA(PID_Specs())
         best_creature.score = -1000000
         best_pop_score = -1000000
+        pop_score = -1000000
         cgeneration = 0
         for noGeneration in range(0, self.max_generation):
-            population = self.breed_population(population)
+            population = self.breed_population(population=population, genius=genius)
             print(f"-------- Generation={noGeneration} Population={len(population)}")
             
+            if pop_score < stone_age:
+                strategy = self.fast_test
+            elif pop_score < golden_age:
+                strategy = self.detailed_test
+            else:
+                strategy = self.accurate_test
+
             for loc, creature in enumerate(population):
-                self.eval_fitness_score(creature)                
+                self.eval_fitness_score(creature=creature, strategy=strategy)                
                 print(f"Creature {loc} scores {creature.score} fitness points")
 
             population.sort(key=self.getScore, reverse=True)
@@ -262,8 +273,8 @@ class PopulationManager:
             if pop_score > best_pop_score:
                 best_pop_score = pop_score
                 cgeneration = 0
-            elif cgeneration >= self.stagnant_period:
-                print(f"WARNING: Population hasn't improved its score {best_pop_score} for {self.stagnant_period} generations. Algorithm ends.\n")
+            elif cgeneration >= stagnant_period:
+                print(f"WARNING: Population hasn't improved its score {best_pop_score} for {stagnant_period} generations. Algorithm ends.\n")
                 break
             else:
                 cgeneration += 1
@@ -280,17 +291,22 @@ class PopulationManager:
             KD = best_creature.genes[5 * k + 4]                
             print(f"Stage {group_name[k]}: P={P:.4f} I={I:.4f} D={D:.4f} KI={KI:.4f} KD={KD:.4f}")
             
-        self.export_creature(best_creature, self.record_filepath[:-4] + f"score{int(best_creature.score)}" + self.record_filepath[-4:])
-        
-    
+        self.export_creature(best_creature, record_path[:-4] + f"score{int(best_creature.score)}" + record_path[-4:])
           
 
 if __name__ == "__main__":
-    max_gen = 1
-    max_pop = 4
+    max_gen = 2000
+    max_pop = 100
     popMan = PopulationManager( max_generation=max_gen, 
                                 pop_size=max_pop, 
-                                mutation_chance=0.0222,
-                                stagnant_period=50,
-                                record_filepath=f"pop{max_pop}gen{max_gen}.csv")    
-    popMan.run()
+                                mutation_chance=0.01,                                
+                                fast_test="points_pcr_model.ml",
+                                detailed_test="profile_pcr_model.ml",
+                                accurate_test="hybrid_pcr_model.ml",                                
+                              )    
+    popMan.run(record_path=f"pop{max_pop}gen{max_gen}.csv", 
+               genius=False, 
+               stagnant_period=50,
+               stone_age=-800,
+               golden_age=-40,
+              )

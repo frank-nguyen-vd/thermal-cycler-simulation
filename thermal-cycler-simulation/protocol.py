@@ -11,9 +11,8 @@ class Protocol:
                 nCycles=6, 
                 Tblock=25, 
                 Tamb=25, 
-                pcr_path="best_pcr_model.ml",
-                peltier_path="best_peltier_model.ml",
-                record_filepath="protocol.csv"):
+                pcr_path="points_pcr_model.ml",                
+                ):
         self.time = 0
         self.checkpoint = 0
         self.record_period = 0.2
@@ -22,8 +21,7 @@ class Protocol:
         self.listSP = listSP
         self.listRate = listRate
         self.listHold = listHold
-        self.nCycles = nCycles
-        self.record_filepath = record_filepath
+        self.nCycles = nCycles        
         self.pcr_machine = PCR_Machine( path_to_model=pcr_path,
                                         sample_volume=10,
                                         sample_temp=Tblock,
@@ -36,7 +34,7 @@ class Protocol:
                                         start_time=0
                                         
         )
-        self.peltier = Peltier(path_to_model=peltier_path)
+        self.peltier = Peltier()
         self.tbc_controller = TBC_Controller(PCR_Machine=self.pcr_machine,
                                             Peltier=self.peltier,
                                             start_time=0,
@@ -49,8 +47,7 @@ class Protocol:
                 "Block Temp",
                 "Heat Sink Temp",
                 "QPID",
-                "Iset",
-                "Imeasure",
+                "Iset",                
                 "Vset",
                 "Control Stage",
                 "PID SP",
@@ -70,8 +67,7 @@ class Protocol:
             "Block Temp"    :   self.pcr_machine.block_temp,
             "Heat Sink Temp":   self.pcr_machine.heat_sink_temp,
             "QPID"          :   self.tbc_controller.qpid,
-            "Iset"          :   self.pcr_machine.Iset,
-            "Imeasure"      :   self.pcr_machine.Imeasure,
+            "Iset"          :   self.pcr_machine.Iset,            
             "Vset"          :   self.pcr_machine.Vset,
             "Control Stage" :   self.tbc_controller.stage,
             "PID SP"        :   self.tbc_controller.pid.SP,
@@ -91,7 +87,7 @@ class Protocol:
             self.record()
             self.checkpoint = self.time
 
-    def run(self, record_mode='w'):
+    def run(self, record_path="", record_mode='w'):
         for i in range(0, self.nCycles):
             for setpoint, rate, hold_time in zip(self.listSP, self.listRate, self.listHold):
                 self.tbc_controller.ramp_to(setpoint, rate)
@@ -105,7 +101,8 @@ class Protocol:
                     ctime += self.dt
                     if ctime >= time_limit:
                         print("ERROR: Ramp time exceeds the time limit.")
-                        self.protocolData.to_csv("protocol.csv", index=False)
+                        self.protocolData.to_csv(record_path, index=False, mode=record_mode)
+                        print(f"Protocol data are saved to {record_path}")
                         return
                 ctime = 0
                 print(f"Holding at {setpoint}")
@@ -114,16 +111,18 @@ class Protocol:
                     self.pcr_machine.tick(self.dt)                    
                     self.tick(self.dt)
                     ctime += self.dt
-        print("Saving protocol data")
-        self.protocolData.to_csv(self.record_filepath, index=False, mode=record_mode)
+        
+        self.protocolData.to_csv(record_path, index=False, mode=record_mode)
+        print(f"Protocol data are saved to {record_path}")
 
 if __name__ == "__main__":
     protocol = Protocol(listSP   =[ 95,  60], 
                         listRate =[100, 100], 
-                        listHold =[ 10,  10], 
+                        listHold =[ 15,  15], 
                         nCycles  =1, 
                         Tblock   =60, 
-                        Tamb     =25
+                        Tamb     =25,
+                        pcr_path = "hybrid_pcr_model.ml",                        
                         )
-    protocol.run()
+    protocol.run(record_path="protocol.csv", record_mode='w')
 

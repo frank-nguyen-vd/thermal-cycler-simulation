@@ -1,13 +1,7 @@
 from math import sqrt
-import joblib
-
 class Peltier:
-    def __init__(self, peltier_model=None, path_to_model="default_peltier_model.ml", mode="heat"):
+    def __init__(self, mode="heat"):
         self.mode = mode
-        if peltier_model == None:
-            self.peltier_model = self.load_model(path_to_model)
-        else:
-            self.peltier_model = peltier_model
         
         self.QC = [
             -8.0217,
@@ -45,9 +39,6 @@ class Peltier:
              4.90E-05,
             -0.0051499
         ]
-
-    def load_model(self, path):
-        return joblib.load(path)
 
     def calculate_Iset(self, qpid, heat_sink_temp, block_temp, max_heat_current, max_cool_current):
         if self.mode == "heat":
@@ -123,9 +114,4 @@ class Peltier:
     def output(self, qpid, heat_sink_temp, block_temp, max_heat_current, max_cool_current):
         Iset = self.calculate_Iset(qpid, heat_sink_temp, block_temp, max_heat_current, max_cool_current)
         Vset = self.calculate_Vset(heat_sink_temp, block_temp, Iset)
-        Imeasure = self.peltier_model.predict([[Iset, Vset]])[0]
-        if Vset < 0:
-            Imeasure = -abs(Imeasure)
-        else:
-            Imeasure = abs(Imeasure)
-        return Iset, Imeasure, Vset
+        return Iset, Vset

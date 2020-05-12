@@ -619,14 +619,13 @@ class TBC_Controller:
             self.prepare_hold()
 
     def output(self):
-        Iset, Imeasure, Vset = self.peltier.output( self.qpid, 
-                                                    self.pcr.heat_sink_temp,
-                                                    self.pcr.block_temp,
-                                                    self.maxHeatIset,
-                                                    self.maxCoolIset
-        )
-        self.pcr.Iset = Iset
-        self.pcr.Imeasure = Imeasure
+        Iset, Vset = self.peltier.output(   self.qpid, 
+                                            self.pcr.heat_sink_temp,
+                                            self.pcr.block_temp,
+                                            self.maxHeatIset,
+                                            self.maxCoolIset
+                                        )
+        self.pcr.Iset = Iset        
         self.pcr.Vset = Vset
  
     def update(self):
