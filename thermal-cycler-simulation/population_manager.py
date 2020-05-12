@@ -139,81 +139,124 @@ class PopulationManager:
             new_pop.pop()
         return new_pop
 
-    def eval_fitness_score(self, creature, pcr_model, update_period=0.05, dt=0.05):
-        setpoint1 = 60
-        setpoint2 = 95
+    def eval_fitness_score(self, creature, pcr_model, update_period=0.05, dt=0.05,
+                           death_penalty=1000, rr_penalty=1, temp_penalty=50, temp_window=0.25,
+                           time_window=2,):
+        low_temp = 60
+        high_temp = 95
         hold_time = 10
-        pcr, tbc = self.init_environment(pcr_model, block_temp=setpoint1, update_period=update_period)
+        pcr, tbc = self.init_environment(pcr_model, block_temp=low_temp, update_period=update_period)
         creature.blend_in(tbc)
+        creature.target_up_rate = tbc.max_up_ramp
+        creature.target_down_rate = tbc.max_down_ramp
+
+        ####### EVALUATE "RAMP UP" #######
         creature.score = 0
-        tbc.ramp_to(new_set_point=setpoint2, sample_rate=100)
-        time_limit = 2.5 * (setpoint2 - setpoint1) / tbc.max_up_ramp
-        ctime = 0
-        up_deviation = 0
-        while tbc.stage != "Hold":
+        tbc.ramp_to(new_set_point=high_temp, sample_rate=100)
+        time_limit = time_window * (high_temp - low_temp) / tbc.max_up_ramp
+        ctime = 0        
+        checkpoint = high_temp - 1
+        while pcr.sample_temp < checkpoint:
             if ctime > time_limit:
                 creature.alive = False
                 break
             tbc.tick(dt)
             pcr.tick(dt)
             ctime += dt
-            if pcr.sample_temp - setpoint2 > up_deviation:
-                up_deviation = pcr.sample_temp - setpoint2                    
 
         if not creature.alive:
-            creature.score -= 1000
-            # giving the creature second chance to live
-            creature.alive = True                    
-            pcr, tbc = self.init_environment(pcr_model, block_temp=setpoint2, update_period=update_period)
-            creature.blend_in(tbc)
-            tbc.ramp_to(new_set_point=setpoint2, sample_rate=100)                    
-        else:
-            avg_rate = (pcr.sample_temp - setpoint1) / ctime
-            creature.score -= abs(avg_rate - tbc.max_up_ramp) / tbc.max_up_ramp * 100
-            if up_deviation > 0.25:
-                creature.score -= up_deviation * 50
+            # Death Penalty for not completing RAMP UP
+            creature.score -= death_penalty
+            # Death Penalty for not going through PRE HOLD
+            creature.score -= death_penalty
 
+            # giving the creature another chance to live
+            creature.alive = True                    
+            pcr.reset(sample_temp=high_temp, block_temp=high_temp)
+            tbc.reset(set_point=high_temp)            
+            # Skip PRE HOLD, go to HOLD
+            tbc.ramp_to(new_set_point=high_temp, sample_rate=100)                    
+        else:
+            creature.measured_up_rate = (pcr.sample_temp - low_temp) / ctime
+            creature.score -= abs(creature.measured_up_rate - tbc.max_up_ramp) / tbc.max_up_ramp * 100 * rr_penalty
+
+
+        ####### EVALUATE "PRE HOLD" AND "HOLD" #######
+        overshoot = 0
         up_deviation = 0
         down_deviation = 0
         ctime = 0
         while ctime < hold_time:
-            if tbc.stage != "Hold":
-                print("ERROR: TBC Controller is not at stage HOLD while holding at setpoint")
-                raise Exception
+            if tbc.stage == "Hold":
+                if pcr.sample_temp - high_temp > up_deviation:
+                    up_deviation = pcr.sample_temp - high_temp
+                elif high_temp - pcr.sample_temp > down_deviation:
+                    down_deviation = high_temp - pcr.sample_temp
+            else:
+                if pcr.sample_temp - high_temp > overshoot:
+                    overshoot = pcr.sample_temp - high_temp
             tbc.tick(dt)
             pcr.tick(dt)
             ctime += dt
-            if pcr.sample_temp - setpoint2 > up_deviation:
-                up_deviation = pcr.sample_temp - setpoint2
-            elif setpoint2 - pcr.sample_temp > down_deviation:
-                down_deviation = setpoint2 - pcr.sample_temp
-            
-        if up_deviation > 0.25:
-            creature.score -= up_deviation * 50
-        if down_deviation > 0.25:
-            creature.score -= down_deviation * 50
         
-        tbc.ramp_to(new_set_point=setpoint1, sample_rate=100)
-        time_limit = 2.5 * (setpoint2 - setpoint1) / tbc.max_down_ramp
+        creature.heat_overshoot = overshoot
+        creature.max_up_deviation = up_deviation
+        creature.max_down_deviation = down_deviation
+
+        if up_deviation > 1 or down_deviation > 1:
+            creature.score -= death_penalty # creature is dead
+            # give the creature another chance to live
+            pcr.reset(sample_temp=high_temp, block_temp=high_temp)
+            tbc.reset(set_point=high_temp)            
+        else:
+            if overshoot > temp_window:
+                creature.score -= overshoot * temp_penalty
+            if up_deviation > temp_window:
+                creature.score -= up_deviation * temp_penalty
+            if down_deviation > temp_window:
+                creature.score -= down_deviation * temp_penalty
+        
+
+        ####### EVALUATE "RAMP DOWN" #######        
+        tbc.ramp_to(new_set_point=low_temp, sample_rate=100)
+        time_limit = time_window * (high_temp - low_temp) / tbc.max_down_ramp
         ctime = 0
-        down_deviation = 0
-        while tbc.stage != "Hold":
+        checkpoint = low_temp + 1        
+        while pcr.sample_temp > checkpoint:
             if ctime > time_limit:
                 creature.alive = False
                 break
             tbc.tick(dt)
             pcr.tick(dt)
             ctime += dt
-            if setpoint1 - pcr.sample_temp > down_deviation:
-                down_deviation = setpoint1 - pcr.sample_temp
 
         if not creature.alive:
-            creature.score -= 1000
-        else:
-            avg_rate = (setpoint2 - pcr.sample_temp) / ctime
-            creature.score -= abs(avg_rate - tbc.max_down_ramp) / tbc.max_down_ramp * 100
-            if down_deviation > 0.25:
-                creature.score -= down_deviation * 50
+             # Death Penalty for not completing RAMP DOWN
+            creature.score -= death_penalty
+             # Death Penalty for not making it to PRE HOLD
+            creature.score -= death_penalty
+
+            return creature.score  # no more chance to live
+        
+        creature.measured_down_rate = (high_temp - pcr.sample_temp) / ctime
+        creature.score -= abs(creature.measured_down_rate - tbc.max_down_ramp) / tbc.max_down_ramp * 100 * rr_penalty
+
+        ####### EVALUATE "PRE HOLD" #######
+        overshoot = 0
+        while tbc.stage != "Hold":
+            if ctime > time_limit:
+                creature.alive = False
+                break
+            if low_temp - pcr.sample_temp > overshoot:
+                overshoot = low_temp - pcr.sample_temp
+            tbc.tick(dt)
+            pcr.tick(dt)
+            ctime += dt
+        creature.cool_overshoot = overshoot
+        if not creature.alive:
+            creature.score -= death_penalty
+        elif overshoot > temp_window:
+            creature.score -= temp_penalty
 
         return creature.score
 
