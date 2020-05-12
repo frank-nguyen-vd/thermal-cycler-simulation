@@ -12,17 +12,17 @@ class PopulationManager:
                     max_generation=50,
                     mutation_chance=0.01,                    
                     pcr_model=None,
-                    points_model_path="points_pcr_model.ml",
-                    profile_model_path="profile_pcr_model.ml",
-                    hybrid_model_path="hybrid_pcr_model.ml",                    
+                    fast_test="points_pcr_model.ml",
+                    detailed_test="profile_pcr_model.ml",
+                    accurate_test="hybrid_pcr_model.ml",                    
                 ):
         self.pcr_model = pcr_model        
         self.pop_size = pop_size
         self.max_generation = max_generation
         self.mutation_chance = mutation_chance        
-        self.points_model_path = points_model_path
-        self.profile_model_path = profile_model_path
-        self.hybrid_model_path = hybrid_model_path        
+        self.fast_test = fast_test
+        self.detailed_test = detailed_test
+        self.accurate_test = accurate_test        
         
 
     def create_population(self, pop_size, genius=True):
@@ -231,12 +231,12 @@ class PopulationManager:
                             nCycles  =1, 
                             Tblock   =60, 
                             Tamb     =25,
-                            pcr_path=self.hybrid_model_path,                            
+                            pcr_path=self.accurate_test,                            
                             )
         creature.blend_in(protocol.tbc_controller)
         protocol.run(record_path=filepath, record_mode='a')  
 
-    def run(self, stone_age=-200, bronze_age=-50, record_path=None, genius=True, stagnant_period=50):
+    def run(self, stone_age=-800, golden_age=-40, record_path=None, genius=True, stagnant_period=50):
         population = []
         best_creature = DNA(PID_Specs())
         best_creature.score = -1000000
@@ -248,11 +248,11 @@ class PopulationManager:
             print(f"-------- Generation={noGeneration} Population={len(population)}")
             
             if pop_score < stone_age:
-                strategy = self.points_model_path
-            elif pop_score < bronze_age:
-                strategy = self.profile_model_path
+                strategy = self.fast_test
+            elif pop_score < golden_age:
+                strategy = self.detailed_test
             else:
-                strategy = self.hybrid_model_path
+                strategy = self.accurate_test
 
             for loc, creature in enumerate(population):
                 self.eval_fitness_score(creature=creature, strategy=strategy)                
@@ -296,17 +296,17 @@ class PopulationManager:
 
 if __name__ == "__main__":
     max_gen = 2000
-    max_pop = 20
+    max_pop = 100
     popMan = PopulationManager( max_generation=max_gen, 
                                 pop_size=max_pop, 
-                                mutation_chance=0.0222,                                
-                                points_model_path="points_pcr_model.ml",
-                                profile_model_path="profile_pcr_model.ml",
-                                hybrid_model_path="hybrid_pcr_model.ml",                                
+                                mutation_chance=0.01,                                
+                                fast_test="points_pcr_model.ml",
+                                detailed_test="profile_pcr_model.ml",
+                                accurate_test="hybrid_pcr_model.ml",                                
                               )    
     popMan.run(record_path=f"pop{max_pop}gen{max_gen}.csv", 
                genius=False, 
                stagnant_period=50,
-               stone_age=-200,
-               bronze_age=-50,
+               stone_age=-800,
+               golden_age=-40,
               )
