@@ -304,7 +304,7 @@ class PopulationManager:
 
             for loc, creature in enumerate(population):
                 self.eval_fitness_score(creature=creature, pcr_model=self.load_model(strategy))
-                print(f"Creature {loc} scores {creature.score} fitness points")
+                print(f"Creature {loc} scores {creature.score:.2f} fitness points")
 
             population.sort(key=self.getScore, reverse=True)
             if population[0].score > best_creature.score:
@@ -333,18 +333,18 @@ class PopulationManager:
           
 
 if __name__ == "__main__":
-    max_gen = 1
-    max_pop = 4
+    max_gen = 2000
+    max_pop = 100
     popMan = PopulationManager( max_generation=max_gen, 
                                 pop_size=max_pop, 
                                 mutation_chance=0.01,                                
-                                fast_test="points_pcr_model.ml",
-                                detailed_test="profile_pcr_model.ml",
+                                fast_test="hybrid_pcr_model.ml",
+                                detailed_test="hybrid_pcr_model.ml",
                                 accurate_test="hybrid_pcr_model.ml",                                
                               )    
     popMan.run(record_path=f"pop{max_pop}gen{max_gen}.csv", 
-               genius=True, 
+               genius=False, 
                stagnant_period=50,
-               stone_age=-800,
+               stone_age=-1000,
                golden_age=-40,
               )

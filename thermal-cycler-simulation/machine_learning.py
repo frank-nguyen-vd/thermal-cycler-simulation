@@ -71,9 +71,10 @@ class MachineLearning:
                     if score[test_method] > max_score[test_method]:
                         max_score[test_method] = score[test_method]
                         model_loc[test_method] = loc
+            print("Conclusion:")
             for test_method in ["single points", "thermal profile", "hybrid"]:
                 if report:                    
-                    print(f"--- The best regressor in {test_method} evaluation is {list_names[model_loc[test_method]]} which scores {max_score[test_method]} ---\n")
+                    print(f"    - {list_names[model_loc[test_method]]} scores {max_score[test_method]}, the best in {test_method} evaluation")
                 best_model[test_method] = list_models[model_loc[test_method]]
                 model_name[test_method] = list_names[model_loc[test_method]]
             
@@ -106,8 +107,7 @@ class MachineLearning:
         score["hybrid"] = score["thermal profile"] + score["single points"]
         return score
 
-    def pickBestMLmodels(   self, 
-                            test_method="thermal profile",
+    def pickBestMLmodels(   self,                             
                             pcr_train_path="train/pcr_training_set.csv",
                             pcr_test_path="test/pcr_testing_set.csv",
                             max_iters=10,
@@ -118,7 +118,7 @@ class MachineLearning:
         best_technique = {}
         for i in range(0, max_iters): 
             if report:
-                print(f"--- Iteration {i} ---")           
+                print(f"\n--- Iteration {i} ---")           
             pcr_model, model_name, score = self.train_model(train_path=pcr_train_path, test_path=pcr_test_path, report=True,)        
             for test_method in ["single points", "thermal profile", "hybrid"]:            
                 if score[test_method] > best_score[test_method]:
@@ -143,7 +143,7 @@ class MachineLearning:
 if __name__ == "__main__":
     learning = MachineLearning()
 
-    best_model = learning.pickBestMLmodels(test_method="single points", max_iters=5,)
+    best_model = learning.pickBestMLmodels(max_iters=100,)
     learning.save_model(best_model["single points"], "points_pcr_model.ml")
     learning.save_model(best_model["thermal profile"], "profile_pcr_model.ml")
     learning.save_model(best_model["hybrid"], "hybrid_pcr_model.ml")
