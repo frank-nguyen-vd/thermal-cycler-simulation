@@ -6,17 +6,17 @@ from random import randint
 from random import random
 from protocol import Protocol
 from peltier import Peltier
+import joblib
 
 class PopulationManager:
-    def __init__(self, pop_size=100,
+    def __init__(self, 
+                    pop_size=100,
                     max_generation=50,
                     mutation_chance=0.01,                    
-                    pcr_model=None,
                     fast_test="points_pcr_model.ml",
                     detailed_test="profile_pcr_model.ml",
                     accurate_test="hybrid_pcr_model.ml",                    
-                ):
-        self.pcr_model = pcr_model        
+                ):        
         self.pop_size = pop_size
         self.max_generation = max_generation
         self.mutation_chance = mutation_chance        
@@ -40,11 +40,12 @@ class PopulationManager:
             creature.rand_DNA()
         population.append(creature)
         return population
+    
+    def load_model(self, path):
+        return joblib.load(path)
 
-    def init_environment(self, strategy, block_temp=60, amb_temp=25, update_period=0.05, sample_volume=10):
-        
-        pcr_machine = PCR_Machine(  pcr_model=self.pcr_model,
-                                    path_to_model=strategy,
+    def init_environment(self, pcr_model, block_temp=60, amb_temp=25, update_period=0.05, sample_volume=10):        
+        pcr_machine = PCR_Machine(  pcr_model=pcr_model,                                    
                                     sample_volume=sample_volume,
                                     sample_temp=block_temp,
                                     block_temp=block_temp,
@@ -57,10 +58,8 @@ class PopulationManager:
                                         
         )
 
-        peltier = Peltier()
-            
         tbc_controller = TBC_Controller(    PCR_Machine=pcr_machine,
-                                            Peltier=peltier,
+                                            Peltier=Peltier(),
                                             start_time=0,
                                             update_period=update_period,
                                             volume=10
@@ -122,11 +121,11 @@ class PopulationManager:
             new_pop.pop()
         return new_pop
 
-    def eval_fitness_score(self, creature, strategy, update_period=0.05, dt=0.05):
+    def eval_fitness_score(self, creature, pcr_model, update_period=0.05, dt=0.05):
         setpoint1 = 60
         setpoint2 = 95
         hold_time = 10
-        pcr, tbc = self.init_environment(strategy=strategy, block_temp=setpoint1, update_period=update_period)
+        pcr, tbc = self.init_environment(pcr_model, block_temp=setpoint1, update_period=update_period)
         creature.blend_in(tbc)
         creature.score = 0
         tbc.ramp_to(new_set_point=setpoint2, sample_rate=100)
@@ -147,7 +146,7 @@ class PopulationManager:
             creature.score -= 1000
             # giving the creature second chance to live
             creature.alive = True                    
-            pcr, tbc = self.init_environment(strategy=strategy, block_temp=setpoint2, update_period=update_period)
+            pcr, tbc = self.init_environment(pcr_model, block_temp=setpoint2, update_period=update_period)
             creature.blend_in(tbc)
             tbc.ramp_to(new_set_point=setpoint2, sample_rate=100)                    
         else:
@@ -255,7 +254,7 @@ class PopulationManager:
                 strategy = self.accurate_test
 
             for loc, creature in enumerate(population):
-                self.eval_fitness_score(creature=creature, strategy=strategy)                
+                self.eval_fitness_score(creature=creature, pcr_model=self.load_model(strategy))
                 print(f"Creature {loc} scores {creature.score} fitness points")
 
             population.sort(key=self.getScore, reverse=True)
@@ -305,7 +304,7 @@ if __name__ == "__main__":
                                 accurate_test="hybrid_pcr_model.ml",                                
                               )    
     popMan.run(record_path=f"pop{max_pop}gen{max_gen}.csv", 
-               genius=False, 
+               genius=True, 
                stagnant_period=50,
                stone_age=-800,
                golden_age=-40,

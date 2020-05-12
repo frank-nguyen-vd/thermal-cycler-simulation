@@ -3,8 +3,7 @@ import joblib
 
 class  PCR_Machine:
     def __init__(self, 
-                 pcr_model=None,
-                 path_to_model=None, 
+                 pcr_model=None,                 
                  sample_volume=10, 
                  sample_temp=60, 
                  block_temp=60, 
@@ -15,10 +14,7 @@ class  PCR_Machine:
                  update_period=0.05,
                  start_time=0
                 ):
-        if pcr_model == None:
-            self.pcr_model = self.load_model(path_to_model)
-        else:
-            self.pcr_model = pcr_model
+        self.pcr_model = pcr_model
         self.sample_volume = sample_volume
         self.sample_temp = sample_temp
         self.block_temp = block_temp
@@ -37,9 +33,6 @@ class  PCR_Machine:
         self.FIR_Filter = [0.0264, 0.1405, 0.3331, 0.3331, 0.1405, 0.0264]
         self.BlkTempData = [block_temp] * 5
         self.SmpRateData = [0] * 5
-    
-    def load_model(self, path):
-        return joblib.load(path)
         
     def calculate_conversion_constant(self, volume):
         heat_coeffs = [1.9017543860, 0.0604385965, -0.0000643860, 0.0000002982]

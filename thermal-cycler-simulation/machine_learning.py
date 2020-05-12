@@ -92,7 +92,7 @@ class MachineLearning:
             raise Exception
 
     
-    def test_model(self, pcr_model=None, test_path=None, acc_win=0.1,):
+    def test_model(self, pcr_model, test_path=None, acc_win=0.1,):
         score = {}
         score["single points"] = 0
         score["thermal profile"] = 0
@@ -108,8 +108,9 @@ class MachineLearning:
                 correct += 1            
         score["single points"] = round(correct * 100 / total, 2)
         
-        pop_man = PopulationManager(pcr_model=pcr_model)
-        score["thermal profile"] = pop_man.eval_fitness_score(pop_man.create_genius())
+        pop_man = PopulationManager()
+        score["thermal profile"] = pop_man.eval_fitness_score(creature=pop_man.create_genius(),
+                                                              pcr_model=pcr_model)
 
         score["hybrid"] = score["thermal profile"] + score["single points"]
         return score
