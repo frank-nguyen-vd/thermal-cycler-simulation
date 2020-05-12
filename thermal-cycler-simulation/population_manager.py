@@ -129,8 +129,8 @@ class PopulationManager:
         return new_pop
 
     def eval_fitness_score(self, creature, pcr_model, update_period=0.05, dt=0.05,
-                           death_penalty=1000, rr_penalty=1, temp_penalty=50, temp_window=0.25,
-                           time_window=2,):
+                           death_penalty=1000, cheater_penalty=500, rr_penalty=1, 
+                           temp_penalty=50, temp_window=0.25, time_window=2,):
         low_temp = 60
         high_temp = 95
         hold_time = 10
@@ -165,9 +165,11 @@ class PopulationManager:
             tbc.reset(set_point=high_temp)            
             # Skip PRE HOLD, go to HOLD
             tbc.ramp_to(new_set_point=high_temp, sample_rate=100)                    
-        else:
+        elif ctime != 0:
             creature.measured_up_rate = (pcr.sample_temp - low_temp) / ctime
             creature.score -= abs(creature.measured_up_rate - tbc.max_up_ramp) / tbc.max_up_ramp * 100 * rr_penalty
+        else:
+            creature.score -= cheater_penalty
 
 
         ####### EVALUATE "PRE HOLD" AND "HOLD" #######
@@ -181,30 +183,41 @@ class PopulationManager:
                     up_deviation = pcr.sample_temp - high_temp
                 elif high_temp - pcr.sample_temp > down_deviation:
                     down_deviation = high_temp - pcr.sample_temp
-            else:
-                if pcr.sample_temp - high_temp > overshoot:
+            elif pcr.sample_temp - high_temp > overshoot:
                     overshoot = pcr.sample_temp - high_temp
+            if pcr.sample_temp < high_temp - 1:
+                creature.alive = False
+                break
             tbc.tick(dt)
             pcr.tick(dt)
             ctime += dt
         
-        creature.heat_overshoot = overshoot
-        creature.max_up_deviation = up_deviation
-        creature.max_down_deviation = down_deviation
+        if not creature.alive:
+            # Death Penalty for not completing HOLD
+            creature.score -= death_penalty
 
-        if up_deviation > 1 or down_deviation > 1:
-            creature.score -= death_penalty # creature is dead
-            # give the creature another chance to live
+            # giving the creature another chance to live
+            creature.alive = True                    
             pcr.reset(sample_temp=high_temp, block_temp=high_temp)
             tbc.reset(set_point=high_temp)            
         else:
-            if overshoot > temp_window:
-                creature.score -= overshoot * temp_penalty
-            if up_deviation > temp_window:
-                creature.score -= up_deviation * temp_penalty
-            if down_deviation > temp_window:
-                creature.score -= down_deviation * temp_penalty
-        
+            creature.heat_overshoot = overshoot
+            creature.max_up_deviation = up_deviation
+            creature.max_down_deviation = down_deviation
+
+            if up_deviation > 1 or down_deviation > 1:
+                creature.score -= death_penalty # creature is dead
+                # give the creature another chance to live
+                pcr.reset(sample_temp=high_temp, block_temp=high_temp)
+                tbc.reset(set_point=high_temp)            
+            else:
+                if overshoot > temp_window:
+                    creature.score -= overshoot * temp_penalty
+                if up_deviation > temp_window:
+                    creature.score -= up_deviation * temp_penalty
+                if down_deviation > temp_window:
+                    creature.score -= down_deviation * temp_penalty
+     
 
         ####### EVALUATE "RAMP DOWN" #######        
         tbc.ramp_to(new_set_point=low_temp, sample_rate=100)
@@ -227,8 +240,11 @@ class PopulationManager:
 
             return creature.score  # no more chance to live
         
-        creature.measured_down_rate = (high_temp - pcr.sample_temp) / ctime
-        creature.score -= abs(creature.measured_down_rate - tbc.max_down_ramp) / tbc.max_down_ramp * 100 * rr_penalty
+        if ctime != 0:
+            creature.measured_down_rate = (high_temp - pcr.sample_temp) / ctime
+            creature.score -= abs(creature.measured_down_rate - tbc.max_down_ramp) / tbc.max_down_ramp * 100 * rr_penalty
+        else:
+            creature.score -= cheater_penalty
 
         ####### EVALUATE "PRE HOLD" #######
         overshoot = 0
@@ -302,11 +318,13 @@ class PopulationManager:
             if pop_score > best_pop_score:
                 best_pop_score = pop_score
                 cgeneration = 0
-            elif cgeneration >= stagnant_period:
-                print(f"WARNING: Population hasn't improved its score {best_pop_score} for {stagnant_period} generations. Algorithm ends.\n")
-                break
             else:
                 cgeneration += 1
+
+            if stagnant_period != None and cgeneration >= stagnant_period:
+                print(f"WARNING: Population hasn't improved its score {best_pop_score} for {stagnant_period} generations. Algorithm ends.\n")
+                break
+
 
 
         print("==============================================================")
@@ -317,13 +335,13 @@ class PopulationManager:
           
 
 if __name__ == "__main__":
-    max_gen = 2000
+    max_gen = 500
     max_pop = 100
     popMan = PopulationManager( max_generation=max_gen, 
                                 pop_size=max_pop, 
                                 mutation_chance=0.01,                                
                               )    
     popMan.run(record_path=f"pop{max_pop}gen{max_gen}.csv", 
-               genius=False, 
-               stagnant_period=50,
+               genius=True, 
+               stagnant_period=None,
               )
