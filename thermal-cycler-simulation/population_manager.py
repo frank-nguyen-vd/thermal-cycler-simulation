@@ -8,21 +8,10 @@ from peltier import Peltier
 import joblib
 
 class PopulationManager:
-    def __init__(self, 
-                    pop_size=100,
-                    max_generation=50,
-                    mutation_chance=0.01,                    
-                    fast_test="points_pcr_model.ml",
-                    detailed_test="profile_pcr_model.ml",
-                    accurate_test="hybrid_pcr_model.ml",                    
-                ):        
+    def __init__(self, pop_size=100, max_generation=50, mutation_chance=0.01,):        
         self.pop_size = pop_size
         self.max_generation = max_generation
         self.mutation_chance = mutation_chance        
-        self.fast_test = fast_test
-        self.detailed_test = detailed_test
-        self.accurate_test = accurate_test        
-        
 
     def create_population(self, pop_size, genius=True):
         population = []
@@ -260,16 +249,16 @@ class PopulationManager:
 
         return creature.score
 
-    def export_creature(self, creature, filepath):
+    def export_creature(self, creature, filepath, pcr_model_path):
         import csv
         with open(filepath, 'w', newline='') as file:
             writer = csv.writer(file)            
-            writer.writerow([f"Creature scores {creature.score:.2f} (higher score, better performance)"])
-            writer.writerow([f"Target Up Rate = {creature.target_up_rate:.2f} Measure Up Rate = {creature.measured_up_rate:.2f}"])
-            writer.writerow([f"Target Down Rate = {creature.target_down_rate:.2f} Measure Up Rate = {creature.measured_down_rate:.2f}"])
-            writer.writerow([f"Heat Overshoot = {creature.heat_overshoot:.2f} Cool Overshoot = {creature.cool_overshoot:.2f}"])
-            writer.writerow([f"Sample deviation during Hold: +{creature.max_up_deviation:.2f} to -{creature.max_down_deviation:.2f}"])            
-            writer.writerow(["========== LIST OF TUNING PARAMETERS =========="])
+            writer.writerow([f"'Creature scores {creature.score:.2f} (higher score, better performance)"])
+            writer.writerow([f"'Target Up Rate = {creature.target_up_rate:.2f} Measure Up Rate = {creature.measured_up_rate:.2f}"])
+            writer.writerow([f"'Target Down Rate = {creature.target_down_rate:.2f} Measure Up Rate = {creature.measured_down_rate:.2f}"])
+            writer.writerow([f"'Heat Overshoot = {creature.heat_overshoot:.2f} Cool Overshoot = {creature.cool_overshoot:.2f}"])
+            writer.writerow([f"'Sample deviation during Hold: +{creature.max_up_deviation:.2f} to -{creature.max_down_deviation:.2f}"])            
+            writer.writerow(["'========== LIST OF TUNING PARAMETERS =========="])
             for k in range(0, creature.dnaLength):
                 writer.writerow([creature.specs[k][3] + f" = {creature.dna[k]:.4f}"])
 
@@ -279,12 +268,12 @@ class PopulationManager:
                             nCycles  =1, 
                             Tblock   =60, 
                             Tamb     =25,
-                            pcr_path=self.accurate_test,                            
+                            pcr_path = pcr_model_path,
                             )
         creature.blend_in(protocol.tbc_controller)
         protocol.run(record_path=filepath, record_mode='a')  
 
-    def run(self, stone_age=-800, golden_age=-40, record_path=None, genius=True, stagnant_period=50):
+    def run(self, pcr_model_path="hybrid_pcr_model.ml", record_path=None, genius=True, stagnant_period=50):
         population = []
         best_creature = DNA()
         best_creature.score = -1000000
@@ -295,15 +284,8 @@ class PopulationManager:
             population = self.breed_population(population=population, genius=genius)
             print(f"-------- Generation={noGeneration} Population={len(population)}")
             
-            if pop_score < stone_age:
-                strategy = self.fast_test
-            elif pop_score < golden_age:
-                strategy = self.detailed_test
-            else:
-                strategy = self.accurate_test
-
             for loc, creature in enumerate(population):
-                self.eval_fitness_score(creature=creature, pcr_model=self.load_model(strategy))
+                self.eval_fitness_score(creature=creature, pcr_model=self.load_model(pcr_model_path))
                 print(f"Creature {loc} scores {creature.score:.2f} fitness points")
 
             population.sort(key=self.getScore, reverse=True)
@@ -328,8 +310,10 @@ class PopulationManager:
 
 
         print("==============================================================")
-        print(f"The best creature score is {best_creature.score} fitness points")
-        self.export_creature(best_creature, record_path[:-4] + f"score{int(best_creature.score)}" + record_path[-4:])
+        print(f"The best creature score is {best_creature.score:.2f} fitness points")
+        self.export_creature(creature=best_creature,
+                             filepath=record_path[:-4] + f"score{int(best_creature.score)}" + record_path[-4:],
+                             pcr_model_path=pcr_model_path,)
           
 
 if __name__ == "__main__":
@@ -338,13 +322,8 @@ if __name__ == "__main__":
     popMan = PopulationManager( max_generation=max_gen, 
                                 pop_size=max_pop, 
                                 mutation_chance=0.01,                                
-                                fast_test="hybrid_pcr_model.ml",
-                                detailed_test="hybrid_pcr_model.ml",
-                                accurate_test="hybrid_pcr_model.ml",                                
                               )    
     popMan.run(record_path=f"pop{max_pop}gen{max_gen}.csv", 
                genius=False, 
                stagnant_period=50,
-               stone_age=-1000,
-               golden_age=-40,
               )

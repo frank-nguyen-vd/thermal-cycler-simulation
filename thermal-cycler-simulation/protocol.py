@@ -12,7 +12,7 @@ class Protocol:
                 nCycles=6, 
                 Tblock=25, 
                 Tamb=25, 
-                pcr_path="points_pcr_model.ml",                
+                pcr_path="hybrid_pcr_model.ml",                
                 ):
         self.time = 0
         self.checkpoint = 0
