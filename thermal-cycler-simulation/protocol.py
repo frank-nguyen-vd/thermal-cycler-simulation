@@ -2,6 +2,7 @@ from pcr_machine import PCR_Machine
 from tbc_controller import TBC_Controller
 from peltier import Peltier
 import pandas as pd
+import joblib
 
 class Protocol:
     def __init__(self, 
@@ -22,7 +23,7 @@ class Protocol:
         self.listRate = listRate
         self.listHold = listHold
         self.nCycles = nCycles        
-        self.pcr_machine = PCR_Machine( path_to_model=pcr_path,
+        self.pcr_machine = PCR_Machine( pcr_model=self.load_model(pcr_path),
                                         sample_volume=10,
                                         sample_temp=Tblock,
                                         block_temp=Tblock,
@@ -80,6 +81,9 @@ class Protocol:
             "PID2 PV"       :   self.tbc_controller.pid2.PV
         }
         self.protocolData = self.protocolData.append(data, ignore_index=True)
+
+    def load_model(self, path):
+        return joblib.load(path)
 
     def tick(self, dt):
         self.time += dt

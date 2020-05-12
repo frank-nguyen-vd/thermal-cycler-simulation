@@ -1,5 +1,4 @@
 from dna import DNA
-from pid_specs import PID_Specs
 from pcr_machine import PCR_Machine
 from tbc_controller import TBC_Controller
 from random import randint
@@ -29,16 +28,17 @@ class PopulationManager:
         population = []
         
         for i in range(0, pop_size - 1):
-            creature = DNA(PID_Specs())
-            creature.rand_DNA()
+            creature = DNA()
+            creature.generate_DNA()
             population.append(creature)
 
         if genius:
-            creature =self.create_genius()
+            population.append(self.create_genius())
         else:
-            creature = DNA(PID_Specs())
-            creature.rand_DNA()
-        population.append(creature)
+            creature = DNA()
+            creature.generate_DNA()
+            population.append(creature)
+
         return population
     
     def load_model(self, path):
@@ -71,28 +71,46 @@ class PopulationManager:
 
     def mate(self, dad, mom):
         size = dad.dnaLength
-        offspring = DNA(PID_Specs())
+        offspring = DNA()
         for i in range(0, size):
             if random() > 0.5: # 50% chance to get dad's gene
-                offspring.genes[i] = dad.genes[i]
+                offspring.dna[i] = dad.dna[i]
             else: # 50% chance to get mom's gene
-                offspring.genes[i] = mom.genes[i]
+                offspring.dna[i] = mom.dna[i]
             if random() < self.mutation_chance:
-                offspring.rand_gene(i)
+                offspring.mutate_gene(i)
         return offspring
 
     def create_genius(self):
-        genius = DNA(PID_Specs())
-        genius.genes = [3,0.06,0.0001,10,5,
-                        7,0.05,0,2,5,
-                        1,0.04,0.01,5,10,
-                        10,0.03,0,2,5,
-                        0.9,0.04,0.01,5,10,
-                        3,0.06,0.0001,10,5,
-                        7,0.05,0,2,5,
-                        1,0.04,0.01,5,10,
-                        10,0.03,0,2,5
-                        ]
+        genius = DNA()
+        genius.dna = [  3,0.06,0.0001,10,5, # PID Ramp Up
+                        7,0.05,0,2,5,       # PID Overshoot Over 
+                        1,0.04,0.01,5,10,   # PID Hold Over
+                        10,0.03,0,2,5,      # PID Land Over
+                        0.9,0.04,0.01,5,10, # PID Hold
+                        3,0.06,0.0001,10,5, # PID Ramp Down
+                        7,0.05,0,2,5,       # PID Overshoot Under
+                        1,0.04,0.01,5,10,   # PID Hold Under
+                        10,0.03,0,2,5,      # PID Land Under
+                        2.8, # Max Heat Overshoot
+                        3.4, # Max Cool Overshoot
+                        2, # Heat Sample Window
+                        2, # Cool Sample Window
+                        40, # Max Hold Power
+                        150, # Max Ramp Power
+                        4, # Heat Block Window
+                        3, # Cool Block Window
+                        1.2, # Heat Overshoot Attenuation
+                        0.2, # Heat Overshoot Activation RR
+                        0.1, # Heat Overshoot Activation SP
+                        1.5, # Cool Overshoot Attenuation
+                        0.3, # Cool Overshoot Activation RR
+                       -0.1, # Cool Overshoot Activation SP
+                        1.6, # Temp Ctrl Over RR Limit
+                        1.5, # Temp Ctrl Under RR Limit
+                        1.5, # Temp Ctrl Over Block Window
+                        1.75, # Temp Ctrl Under Block Window
+                    ]
         return genius
 
     def breed_population(self, population, genius=True):
@@ -201,28 +219,16 @@ class PopulationManager:
 
     def export_creature(self, creature, filepath):
         import csv
-        stage = [  "Ramp Up", 
-                    "Overshoot Over", 
-                    "Hold Over", 
-                    "Land Over", 
-                    "Hold", 
-                    "Ramp Down", 
-                    "Overshoot Under", 
-                    "Hold Under", 
-                    "Land Under"
-                ]
         with open(filepath, 'w', newline='') as file:
             writer = csv.writer(file)            
-            writer.writerow(["Score"])
-            writer.writerow([creature.score])            
-            writer.writerow(["Stage", "P", "I", "D", "KI", "KD"])
-            for k in range(0, 9):
-                P  = creature.genes[5 * k]
-                I  = creature.genes[5 * k + 1]
-                D  = creature.genes[5 * k + 2]
-                KI = creature.genes[5 * k + 3]
-                KD = creature.genes[5 * k + 4]                                
-                writer.writerow([stage[k], P, I, D, KI, KD])
+            writer.writerow([f"Creature scores {creature.score:.2f} (higher score, better performance)"])
+            writer.writerow([f"Target Up Rate = {creature.target_up_rate:.2f} Measure Up Rate = {creature.measured_up_rate:.2f}"])
+            writer.writerow([f"Target Down Rate = {creature.target_down_rate:.2f} Measure Up Rate = {creature.measured_down_rate:.2f}"])
+            writer.writerow([f"Heat Overshoot = {creature.heat_overshoot:.2f} Cool Overshoot = {creature.cool_overshoot:.2f}"])
+            writer.writerow([f"Sample deviation during Hold: +{creature.max_up_deviation:.2f} to -{creature.max_down_deviation:.2f}"])            
+            writer.writerow(["========== LIST OF TUNING PARAMETERS =========="])
+            for k in range(0, creature.dnaLength):
+                writer.writerow([creature.specs[k][3] + f" = {creature.dna[k]:.4f}"])
 
         protocol = Protocol(listSP   =[ 95,  60], 
                             listRate =[100, 100], 
@@ -237,7 +243,7 @@ class PopulationManager:
 
     def run(self, stone_age=-800, golden_age=-40, record_path=None, genius=True, stagnant_period=50):
         population = []
-        best_creature = DNA(PID_Specs())
+        best_creature = DNA()
         best_creature.score = -1000000
         best_pop_score = -1000000
         pop_score = -1000000
@@ -260,7 +266,7 @@ class PopulationManager:
             population.sort(key=self.getScore, reverse=True)
             if population[0].score > best_creature.score:
                 best_creature.score = population[0].score
-                best_creature.genes = population[0].genes.copy()
+                best_creature.dna = population[0].dna.copy()
             pop_score = 0
             pop_size = self.pop_size // 2
             for i in range(0, pop_size):
@@ -281,21 +287,12 @@ class PopulationManager:
 
         print("==============================================================")
         print(f"The best creature score is {best_creature.score} fitness points")
-        group_name = ["Ramp Up", "Overshoot Over", "Hold Over", "Land Over", "Hold", "Ramp Down", "Overshoot Under", "Hold Under", "Land Under"]
-        for k in range(0, 9):
-            P  = best_creature.genes[5 * k]
-            I  = best_creature.genes[5 * k + 1]
-            D  = best_creature.genes[5 * k + 2]
-            KI = best_creature.genes[5 * k + 3]
-            KD = best_creature.genes[5 * k + 4]                
-            print(f"Stage {group_name[k]}: P={P:.4f} I={I:.4f} D={D:.4f} KI={KI:.4f} KD={KD:.4f}")
-            
         self.export_creature(best_creature, record_path[:-4] + f"score{int(best_creature.score)}" + record_path[-4:])
           
 
 if __name__ == "__main__":
-    max_gen = 2000
-    max_pop = 100
+    max_gen = 1
+    max_pop = 4
     popMan = PopulationManager( max_generation=max_gen, 
                                 pop_size=max_pop, 
                                 mutation_chance=0.01,                                
