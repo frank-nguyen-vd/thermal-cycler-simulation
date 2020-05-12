@@ -86,12 +86,12 @@ class DNA:
         resolution = 0.1
         specs.append([min_val, max_val, resolution, "Max Cool Sample Window"])
 
-        min_val = 0
+        min_val = 10 # Max Hold Power cannot be 0
         max_val = 100
         resolution = 10
         specs.append([min_val, max_val, resolution, "Max Hold Power"])
 
-        min_val = 0
+        min_val = 10 # Max Ramp Power cannot be 0
         max_val = 500
         resolution = 10
         specs.append([min_val, max_val, resolution, "Max Ramp Power"])
