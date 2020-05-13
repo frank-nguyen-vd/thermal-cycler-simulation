@@ -8,10 +8,11 @@ from peltier import Peltier
 import joblib
 
 class PopulationManager:
-    def __init__(self, pop_size=100, max_generation=50, mutation_chance=0.01,):        
+    def __init__(self, pop_size=100, max_generation=50, mutation_chance=0.01, mutation_limit=0.20):        
         self.pop_size = pop_size
         self.max_generation = max_generation
-        self.mutation_chance = mutation_chance        
+        self.mutation_chance = mutation_chance
+        self.mutation_limit = mutation_limit
 
     def create_population(self, pop_size, genius=None):
         population = []
@@ -283,7 +284,7 @@ class PopulationManager:
         creature.blend_in(protocol.tbc_controller)
         protocol.run(record_path=filepath, record_mode='a')  
 
-    def run(self, pcr_model_path="hybrid_pcr_model.ml", record_path=None, warm_up=True, stagnant_period=50):
+    def run(self, pcr_model_path="hybrid_pcr_model.ml", record_path=None, warm_up=True, stagnant_period=None):
         population = []
         if warm_up:
             best_creature = self.create_genius()
@@ -292,6 +293,12 @@ class PopulationManager:
             best_creature.generate_DNA()
         best_creature.score = -1000000
         cgeneration = 0
+
+        if stagnant_period != None:
+            # Increase mutation chance if the fitness score not improved over generations
+            # Reach the mutation limit in half of the stagnant period
+            mutation_initial_value = self.mutation_chance
+            mutation_step = (self.mutation_limit - mutation_initial_value) / stagnant_period * 2
         
         for noGeneration in range(0, self.max_generation):
             population = self.breed_population(population=population, genius=best_creature)
@@ -304,10 +311,13 @@ class PopulationManager:
             population.sort(key=self.getScore, reverse=True)
             if population[0].score > best_creature.score:
                 best_creature = population[0].copy()
+                self.mutation_chance = mutation_initial_value
                 cgeneration = 0
                 print(f"*** Generation {noGeneration} new genius scores {best_creature.score} fitness points\n\n")
             else:
                 cgeneration += 1
+                if self.mutation_chance < self.mutation_limit:
+                    self.mutation_chance += mutation_step
                 print(f"*** No improvment for {cgeneration} \n\n")
 
             if stagnant_period != None and cgeneration >= stagnant_period:
