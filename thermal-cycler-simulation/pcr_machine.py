@@ -3,8 +3,7 @@ import joblib
 
 class  PCR_Machine:
     def __init__(self, 
-                 pcr_model=None,
-                 path_to_model=None, 
+                 pcr_model=None,                 
                  sample_volume=10, 
                  sample_temp=60, 
                  block_temp=60, 
@@ -15,10 +14,7 @@ class  PCR_Machine:
                  update_period=0.05,
                  start_time=0
                 ):
-        if pcr_model == None:
-            self.pcr_model = self.load_model(path_to_model)
-        else:
-            self.pcr_model = pcr_model
+        self.pcr_model = pcr_model
         self.sample_volume = sample_volume
         self.sample_temp = sample_temp
         self.block_temp = block_temp
@@ -31,16 +27,24 @@ class  PCR_Machine:
         self.time = start_time
         self.checkpoint = start_time
         self.calculate_conversion_constant(self.sample_volume)
-        self.Iset = 0
-        self.Imeasure = 0
+        self.Iset = 0        
         self.Vset = 0
         self.FIR_Filter = [0.0264, 0.1405, 0.3331, 0.3331, 0.1405, 0.0264]
         self.BlkTempData = [block_temp] * 5
         self.SmpRateData = [0] * 5
-    
-    def load_model(self, path):
-        return joblib.load(path)
-        
+
+    def reset(self, sample_temp=60, block_temp=60, block_rate=0, sample_rate=0, time=0):
+        self.sample_temp = sample_temp
+        self.block_temp = block_temp
+        self.prev_block_temp = block_temp        
+        self.block_rate = block_rate
+        self.sample_rate = sample_rate                
+        self.time = time
+        self.checkpoint = time
+        self.calculate_conversion_constant(self.sample_volume)
+        self.BlkTempData = [block_temp] * 5
+        self.SmpRateData = [0] * 5        
+
     def calculate_conversion_constant(self, volume):
         heat_coeffs = [1.9017543860, 0.0604385965, -0.0000643860, 0.0000002982]
         cool_coeffs = [2.6573099415, 0.0906608187, -0.0006599415, 0.0000020760]     
@@ -103,6 +107,16 @@ class  PCR_Machine:
         d_Tblock = (self.pcr_model.predict([condition])[0] - self.block_temp) * self.period / 0.2
         new_block_temp = self.block_temp + d_Tblock
         self.calcBlockInfo(new_block_temp)
+
+        ################################################################################################ 
+        # IMPORTANT: This line of code helps to improve prediction accuracy                            #
+        # - Original algorithm used to calculate block_rate does not work well in simulation.          #  
+        #   It causes unresponsiveness in stages: Hold, Land Over, Land Under                          #
+        # - Block rate predicted by the ML model is faster but not sure if there is side-effect        #
+        # THEREFORE: Using the average of these two calculation methods for better simulation accuracy #
+        self.block_rate = (d_Tblock / self.period + self.block_rate) / 2
+        ################################################################################################ 
+
         self.calcSampleInfo(new_block_temp, d_Tblock > 0)
         self.calcHeatSinkInfo(d_Tblock)
 

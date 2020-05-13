@@ -22,7 +22,14 @@ class TBC_Controller:
         self.pid.load(self.pid_const, "Hold")
         self.max_up_ramp = self.calc_poly_eqn(self.upRrEqn, self.volume)
         self.max_down_ramp = self.calc_poly_eqn(self.downRrEqn, self.volume)
-        
+
+    def reset(self, set_point=60):
+        self.pid.reset()
+        self.start_time = self.time = 0
+        self.time_elapsed = 0
+        self.set_point = set_point
+        self.smpWinInRampUpFlag = False
+        self.smpWinInRampDownFlag = False        
     
     def calc_poly_eqn(self, eqn, vol):
         return sum([vol**deg * coeff for deg, coeff in enumerate(eqn)])
@@ -340,14 +347,20 @@ class TBC_Controller:
                 self.prepare_hold()
                 return
 
-            if self.calcHeatBlkOS >= self.calcHeatBlkWin:
-                tempSP = self.rampUpStageRate * exp(-self.heat_brake * (self.time_elapsed - self.rampUpStageRampTime) / self.calcHeatBlkOS)
-            else:
-                tempSP = self.rampUpStageRate * exp(-self.heat_brake * (self.time_elapsed - self.rampUpStageRampTime) / self.calcHeatBlkWin)
+            try:
+                if self.calcHeatBlkOS >= self.calcHeatBlkWin:
+                    tempSP = self.rampUpStageRate * exp(-self.heat_brake * (self.time_elapsed - self.rampUpStageRampTime) / self.calcHeatBlkOS)
+                else:
+                    tempSP = self.rampUpStageRate * exp(-self.heat_brake * (self.time_elapsed - self.rampUpStageRampTime) / self.calcHeatBlkWin)
+            except:
+                tempSP = 0
         else:
-            if self.calcHeatSmpWin != 0:
-                tempSP = self.rampUpStageRate * exp(-self.heat_brake * (self.time_elapsed - self.rampUpStageRampTime) / self.calcHeatSmpWin)
-            else:
+            try:
+                if self.calcHeatSmpWin != 0:
+                    tempSP = self.rampUpStageRate * exp(-self.heat_brake * (self.time_elapsed - self.rampUpStageRampTime) / self.calcHeatSmpWin)
+                else:
+                    tempSP = 0
+            except:
                 tempSP = 0
             
             if self.pcr.sample_temp >= self.set_point - 0.2 or self.pcr.block_temp > self.set_point:

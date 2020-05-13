@@ -47,23 +47,16 @@ class MachineLearning:
                                 max_iter=1000,))
             list_names.append("Neural Network")
 
-            list_models.append(RandomForestRegressor(n_estimators=10, n_jobs=-1, warm_start=False))
-            list_names.append("Random Forest")
-
-            list_models.append(GradientBoostingRegressor())
-            list_names.append("Gradient Boosting")
-
-            list_models.append(BaggingRegressor(warm_start=True))
+            list_models.append(BaggingRegressor(warm_start=False))
             list_names.append("Bagging")
-
-            list_models.append(DecisionTreeRegressor(criterion='friedman_mse'))
-            list_names.append("Decision Tree")
-
-            list_models.append(KNeighborsRegressor(n_neighbors=10, weights='distance', leaf_size=30))
-            list_names.append("K-Neighbors")
-
-            list_models.append(VotingRegressor(list(zip(list_names, list_models))))
+            
+            list_models.append(VotingRegressor(estimators=list(zip(list_names, list_models))),)
             list_names.append("Voting")
+
+            list_models.append(StackingRegressor(estimators=list(zip(list_names[:2], list_models[:2]))),)
+            list_names.append("Stacking")
+
+            
 
             for loc in range(0, len(list_models)):
                 list_models[loc] = list_models[loc].fit(train_condition, train_result)
@@ -76,13 +69,14 @@ class MachineLearning:
                 score = self.test_model(pcr_model=list_models[loc], test_path=test_path,)
                 for test_method in ["single points", "thermal profile", "hybrid"]:
                     if report:                    
-                        print(f"{list_names[loc]} scores {score[test_method]} in {test_method} evaluation")
+                        print(f"{list_names[loc]} scores {score[test_method]:.2f} in {test_method} evaluation")
                     if score[test_method] > max_score[test_method]:
                         max_score[test_method] = score[test_method]
                         model_loc[test_method] = loc
+            print("Conclusion:")
             for test_method in ["single points", "thermal profile", "hybrid"]:
                 if report:                    
-                    print(f"--- The best regressor in {test_method} evaluation is {list_names[model_loc[test_method]]} which scores {max_score[test_method]} ---\n")
+                    print(f"    - {list_names[model_loc[test_method]]} scores {max_score[test_method]:.2f}, the best in {test_method} evaluation")
                 best_model[test_method] = list_models[model_loc[test_method]]
                 model_name[test_method] = list_names[model_loc[test_method]]
             
@@ -92,7 +86,7 @@ class MachineLearning:
             raise Exception
 
     
-    def test_model(self, pcr_model=None, test_path=None, acc_win=0.1,):
+    def test_model(self, pcr_model, test_path=None, acc_win=0.1,):
         score = {}
         score["single points"] = 0
         score["thermal profile"] = 0
@@ -108,14 +102,14 @@ class MachineLearning:
                 correct += 1            
         score["single points"] = round(correct * 100 / total, 2)
         
-        pop_man = PopulationManager(pcr_model=pcr_model)
-        score["thermal profile"] = pop_man.eval_fitness_score(pop_man.create_genius())
+        pop_man = PopulationManager()
+        score["thermal profile"] = pop_man.eval_fitness_score(creature=pop_man.create_genius(),
+                                                              pcr_model=pcr_model)
 
         score["hybrid"] = score["thermal profile"] + score["single points"]
         return score
 
-    def pickBestMLmodels(   self, 
-                            test_method="thermal profile",
+    def pickBestMLmodels(   self,                             
                             pcr_train_path="train/pcr_training_set.csv",
                             pcr_test_path="test/pcr_testing_set.csv",
                             max_iters=10,
@@ -126,7 +120,7 @@ class MachineLearning:
         best_technique = {}
         for i in range(0, max_iters): 
             if report:
-                print(f"--- Iteration {i} ---")           
+                print(f"\n--- Iteration {i} ---")           
             pcr_model, model_name, score = self.train_model(train_path=pcr_train_path, test_path=pcr_test_path, report=True,)        
             for test_method in ["single points", "thermal profile", "hybrid"]:            
                 if score[test_method] > best_score[test_method]:
@@ -136,7 +130,7 @@ class MachineLearning:
         if report:
             print("\n")
             for test_method in ["single points", "thermal profile", "hybrid"]:            
-                print(f"\n*** {best_technique[test_method]} scores {best_score[test_method]} after {max_iters} iterations in {test_method} evaluation\n")
+                print(f"\n*** {best_technique[test_method]} scores {best_score[test_method]:.2f} after {max_iters} iterations in {test_method} evaluation\n")
 
         return best_model
     
@@ -151,7 +145,7 @@ class MachineLearning:
 if __name__ == "__main__":
     learning = MachineLearning()
 
-    best_model = learning.pickBestMLmodels(test_method="single points", max_iters=5,)
+    best_model = learning.pickBestMLmodels(max_iters=100,)
     learning.save_model(best_model["single points"], "points_pcr_model.ml")
     learning.save_model(best_model["thermal profile"], "profile_pcr_model.ml")
     learning.save_model(best_model["hybrid"], "hybrid_pcr_model.ml")
