@@ -347,14 +347,20 @@ class TBC_Controller:
                 self.prepare_hold()
                 return
 
-            if self.calcHeatBlkOS >= self.calcHeatBlkWin:
-                tempSP = self.rampUpStageRate * exp(-self.heat_brake * (self.time_elapsed - self.rampUpStageRampTime) / self.calcHeatBlkOS)
-            else:
-                tempSP = self.rampUpStageRate * exp(-self.heat_brake * (self.time_elapsed - self.rampUpStageRampTime) / self.calcHeatBlkWin)
+            try:
+                if self.calcHeatBlkOS >= self.calcHeatBlkWin:
+                    tempSP = self.rampUpStageRate * exp(-self.heat_brake * (self.time_elapsed - self.rampUpStageRampTime) / self.calcHeatBlkOS)
+                else:
+                    tempSP = self.rampUpStageRate * exp(-self.heat_brake * (self.time_elapsed - self.rampUpStageRampTime) / self.calcHeatBlkWin)
+            except:
+                tempSP = 0
         else:
-            if self.calcHeatSmpWin != 0:
-                tempSP = self.rampUpStageRate * exp(-self.heat_brake * (self.time_elapsed - self.rampUpStageRampTime) / self.calcHeatSmpWin)
-            else:
+            try:
+                if self.calcHeatSmpWin != 0:
+                    tempSP = self.rampUpStageRate * exp(-self.heat_brake * (self.time_elapsed - self.rampUpStageRampTime) / self.calcHeatSmpWin)
+                else:
+                    tempSP = 0
+            except:
                 tempSP = 0
             
             if self.pcr.sample_temp >= self.set_point - 0.2 or self.pcr.block_temp > self.set_point:
