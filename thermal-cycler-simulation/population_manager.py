@@ -13,20 +13,17 @@ class PopulationManager:
         self.max_generation = max_generation
         self.mutation_chance = mutation_chance        
 
-    def create_population(self, pop_size, genius=True):
+    def create_population(self, pop_size, genius=None):
         population = []
         
-        for i in range(0, pop_size - 1):
+        for i in range(0, pop_size):
             creature = DNA()
             creature.generate_DNA()
             population.append(creature)
 
-        if genius:
-            population.append(self.create_genius())
-        else:
-            creature = DNA()
-            creature.generate_DNA()
-            population.append(creature)
+        if genius != None:
+            population.pop()
+            population.append(genius)
 
         return population
     
@@ -102,19 +99,16 @@ class PopulationManager:
                     ]
         return genius
 
-    def breed_population(self, population, genius=True):
+    def breed_population(self, population, genius=None):
         if population == []:
-            return self.create_population(pop_size=self.pop_size, genius=genius)
+            return self.create_population(self.pop_size, genius=genius)
 
         if len(population) <= 1:
             print("ERROR: Only one creature left. Population is dead.")
             raise Exception
 
         new_pop = []
-        if genius:
-            new_pop.append(self.create_genius())
         size = len(population) - 1
-        count_creatures = 2
         for i, dad in enumerate(population):            
             for no_of_offspring in range(0, 2):
                 while True:
@@ -123,9 +117,9 @@ class PopulationManager:
                         break
                 mom = population[j]
                 new_pop.append(self.mate(dad, mom))
-                count_creatures += 1
-        if genius:
+        if genius != None:
             new_pop.pop()
+            new_pop.append(genius)
         return new_pop
 
     def eval_fitness_score(self, creature, pcr_model, update_period=0.05, dt=0.05,
@@ -289,15 +283,18 @@ class PopulationManager:
         creature.blend_in(protocol.tbc_controller)
         protocol.run(record_path=filepath, record_mode='a')  
 
-    def run(self, pcr_model_path="hybrid_pcr_model.ml", record_path=None, genius=True, stagnant_period=50):
+    def run(self, pcr_model_path="hybrid_pcr_model.ml", record_path=None, warm_up=True, stagnant_period=50):
         population = []
-        best_creature = DNA()
+        if warm_up:
+            best_creature = self.create_genius()
+        else:
+            best_creature = DNA()
+            best_creature.generate_DNA()
         best_creature.score = -1000000
-        best_pop_score = -1000000
-        pop_score = -1000000
         cgeneration = 0
+        
         for noGeneration in range(0, self.max_generation):
-            population = self.breed_population(population=population, genius=genius)
+            population = self.breed_population(population=population, genius=best_creature)
             print(f"-------- Generation={noGeneration} Population={len(population)}")
             
             for loc, creature in enumerate(population):
@@ -306,26 +303,16 @@ class PopulationManager:
 
             population.sort(key=self.getScore, reverse=True)
             if population[0].score > best_creature.score:
-                best_creature = population[0].copy()                
-            pop_score = 0
-            pop_size = self.pop_size // 2
-            for i in range(0, pop_size):
-                pop_score += population[i].score
-                population.pop()
-            pop_score = pop_score / pop_size
-            print(f"*** Generation {noGeneration} scores {pop_score} fitness points\n\n")
-
-            if pop_score > best_pop_score:
-                best_pop_score = pop_score
+                best_creature = population[0].copy()
                 cgeneration = 0
+                print(f"*** Generation {noGeneration} new genius scores {best_creature.score} fitness points\n\n")
             else:
                 cgeneration += 1
+                print(f"*** No improvment for {cgeneration} \n\n")
 
             if stagnant_period != None and cgeneration >= stagnant_period:
-                print(f"WARNING: Population hasn't improved its score {best_pop_score} for {stagnant_period} generations. Algorithm ends.\n")
+                print(f"WARNING: Population quality has reach its peak. Algorithm ends.\n")
                 break
-
-
 
         print("==============================================================")
         print(f"The best creature score is {best_creature.score:.2f} fitness points")
@@ -335,13 +322,13 @@ class PopulationManager:
           
 
 if __name__ == "__main__":
-    max_gen = 500
+    max_gen = 1000
     max_pop = 100
     popMan = PopulationManager( max_generation=max_gen, 
                                 pop_size=max_pop, 
                                 mutation_chance=0.01,                                
                               )    
     popMan.run(record_path=f"pop{max_pop}gen{max_gen}.csv", 
-               genius=True, 
-               stagnant_period=None,
+               warm_up=False, 
+               stagnant_period=100,
               )
