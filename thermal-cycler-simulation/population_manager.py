@@ -23,8 +23,7 @@ class PopulationManager:
             population.append(creature)
 
         if genius != None:
-            population.pop()
-            population.append(genius)
+            population = population[:-1] + [genius]            
 
         return population
     
@@ -119,8 +118,7 @@ class PopulationManager:
                 mom = population[j]
                 new_pop.append(self.mate(dad, mom))
         if genius != None:
-            new_pop.pop()
-            new_pop.append(genius)
+            new_pop = new_pop[:-1] + [genius]            
         return new_pop
 
     def eval_fitness_score(self, creature, pcr_model, update_period=0.05, dt=0.05,
@@ -302,13 +300,19 @@ class PopulationManager:
         
         for noGeneration in range(0, self.max_generation):
             population = self.breed_population(population=population, genius=best_creature)
-            print(f"-------- Generation={noGeneration} Population={len(population)}")
-            
+            print(f"-------- Generation={noGeneration} / {self.max_generation} Population={len(population)} --------")
+            if stagnant_period != None:
+                print(f"-------- Stagnant Period = {cgeneration} / {stagnant_period}")
             for loc, creature in enumerate(population):
                 self.eval_fitness_score(creature=creature, pcr_model=self.load_model(pcr_model_path))
                 print(f"Creature {loc} scores {creature.score:.2f} fitness points")
 
+            # Rank the creature fitness scores
             population.sort(key=self.getScore, reverse=True)
+
+            # Kill the bottom half of the population
+            population = population[:self.pop_size // 2]
+
             if population[0].score > best_creature.score:
                 best_creature = population[0].copy()
                 self.mutation_chance = mutation_initial_value
@@ -340,5 +344,5 @@ if __name__ == "__main__":
                               )    
     popMan.run(record_path=f"pop{max_pop}gen{max_gen}.csv", 
                warm_up=False, 
-               stagnant_period=100,
+               stagnant_period=50,
               )
