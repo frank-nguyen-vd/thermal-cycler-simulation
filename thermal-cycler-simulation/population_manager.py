@@ -292,17 +292,17 @@ class PopulationManager:
         best_creature.score = -1000000
         cgeneration = 0
 
-        if stagnant_period != None:
-            # Increase mutation chance if the fitness score not improved over generations
-            # Reach the mutation limit in half of the stagnant period
-            mutation_initial_value = self.mutation_chance
-            mutation_step = (self.mutation_limit - mutation_initial_value) / stagnant_period * 2
+        if stagnant_period == None:
+            stagnant_period = self.max_generation
+        # Increase mutation chance if the fitness score not improved over generations
+        # Reach the mutation limit in half of the stagnant period
+        mutation_initial_value = self.mutation_chance
+        mutation_step = (self.mutation_limit - mutation_initial_value) / stagnant_period * 2
         
         for noGeneration in range(0, self.max_generation):
             population = self.breed_population(population=population, genius=best_creature)
             print(f"-------- Generation={noGeneration} / {self.max_generation} Population={len(population)} --------")
-            if stagnant_period != None:
-                print(f"-------- Stagnant Period = {cgeneration} / {stagnant_period}")
+                
             for loc, creature in enumerate(population):
                 self.eval_fitness_score(creature=creature, pcr_model=self.load_model(pcr_model_path))
                 print(f"Creature {loc} scores {creature.score:.2f} fitness points")
@@ -321,10 +321,10 @@ class PopulationManager:
             else:
                 cgeneration += 1
                 if self.mutation_chance < self.mutation_limit:
-                    self.mutation_chance += mutation_step
-                print(f"*** No improvment for {cgeneration} \n\n")
+                    self.mutation_chance += mutation_step     
+                print(f"-------- Stagnant Period = {cgeneration} / {stagnant_period}")           
 
-            if stagnant_period != None and cgeneration >= stagnant_period:
+            if cgeneration >= stagnant_period:
                 print(f"WARNING: Population quality has reach its peak. Algorithm ends.\n")
                 break
 
