@@ -50,8 +50,13 @@ class MachineLearning:
             list_models.append(BaggingRegressor(warm_start=False))
             list_names.append("Bagging")
             
-            list_models.append(VotingRegressor(list(zip(list_names, list_models))))
+            list_models.append(VotingRegressor(estimators=list(zip(list_names, list_models))),)
             list_names.append("Voting")
+
+            list_models.append(StackingRegressor(estimators=list(zip(list_names[:2], list_models[:2]))),)
+            list_names.append("Stacking")
+
+            
 
             for loc in range(0, len(list_models)):
                 list_models[loc] = list_models[loc].fit(train_condition, train_result)
