@@ -2,7 +2,7 @@ from pcr_machine import PCR_Machine
 from tbc_controller import TBC_Controller
 from peltier import Peltier
 import pandas as pd
-import joblib
+from neural_network import MachineLearning
 
 class Protocol:
     def __init__(self, 
@@ -12,7 +12,7 @@ class Protocol:
                 nCycles=6, 
                 Tblock=25, 
                 Tamb=25, 
-                pcr_path="hybrid_pcr_model.ml",                
+                pcr_path="pcr_model",                
                 ):
         self.time = 0
         self.checkpoint = 0
@@ -23,7 +23,7 @@ class Protocol:
         self.listRate = listRate
         self.listHold = listHold
         self.nCycles = nCycles        
-        self.pcr_machine = PCR_Machine( pcr_model=self.load_model(pcr_path),
+        self.pcr_machine = PCR_Machine( pcr_model=MachineLearning.load_model(pcr_path),
                                         sample_volume=10,
                                         sample_temp=Tblock,
                                         block_temp=Tblock,
@@ -82,9 +82,6 @@ class Protocol:
         }
         self.protocolData = self.protocolData.append(data, ignore_index=True)
 
-    def load_model(self, path):
-        return joblib.load(path)
-
     def tick(self, dt):
         self.time += dt
         if round(self.time - self.checkpoint, 3) >= self.record_period:
@@ -126,7 +123,7 @@ if __name__ == "__main__":
                         nCycles  =1, 
                         Tblock   =60, 
                         Tamb     =25,
-                        pcr_path = "hybrid_pcr_model.ml",                        
+                        pcr_path = "pcr_model",                        
                         )
     protocol.run(record_path="protocol.csv", record_mode='w')
 
