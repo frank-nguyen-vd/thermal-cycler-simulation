@@ -3,6 +3,9 @@ from joblib import dump, load
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import Dropout
+from keras.wrappers.scikit_learn import KerasRegressor
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
 
 
 class MachineLearning:
@@ -20,20 +23,23 @@ class MachineLearning:
         return dataset
     
     def train_model(self, train_path=None):
+        # define base model
+        def baseline_model():
+            model = Sequential()
+            model.add(Dense(13, input_dim=5, kernel_initializer='normal', activation='relu'))
+            model.add(Dense(1, kernel_initializer='normal'))
+            model.compile(loss='mean_squared_error', optimizer='adam')
+            return model
         X_train, y_train = self.load_data(train_path)        
+        # evaluate model with standardized dataset
+        pipeline = []
+        pipeline.append(('standardize', StandardScaler()))
+        pipeline.append(('estimator', KerasRegressor(build_fn=baseline_model, epochs=25, batch_size=10, verbose=0)))
+        pipeline = Pipeline(pipeline)
+        pipeline.fit(X_train, y_train)
         
-        # Training the model
-        regressor = Sequential()        
-        regressor.add(Dense(units = 100, kernel_initializer = 'random_normal', activation = 'relu', input_dim = 5, bias_initializer='zeros'))
-        regressor.add(Dropout(0.1))
-        regressor.add(Dense(units = 1, kernel_initializer = 'random_normal', activation = 'relu'))
-
-        # Compiling the ANN
-        regressor.compile(optimizer = 'adam', loss = 'mean_squared_error',  metrics = ['accuracy'])
-
-        # Fitting the ANN to the Training set
-        regressor.fit(X_train, y_train, epochs = 100, batch_size = 20)     
-        
+        return pipeline
+    
         return regressor
     
     def test_model(self, regressor, test_path=None, acc_win=0.1,):
