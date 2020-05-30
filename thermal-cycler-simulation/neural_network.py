@@ -1,11 +1,14 @@
 import pandas as pd
-from joblib import dump, load
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import Dropout
 from keras.wrappers.scikit_learn import KerasRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
+from keras.models import load_model
+import joblib
+import pickle
+import os
 
 
 class MachineLearning:
@@ -40,8 +43,6 @@ class MachineLearning:
         
         return pipeline
     
-        return regressor
-    
     def test_model(self, regressor, test_path=None, acc_win=0.1,):
         
         X_test, y_true = self.load_data(test_path)        
@@ -55,16 +56,26 @@ class MachineLearning:
         score = correct / total * 100
         return score
     
-    def save_model(self, model, path):
-        # save the model to disk        
-         dump(model, path)
+    def save_model(self, pipeline, folder='pcr_model'):
+        os.makedirs(folder, exist_ok=True)
+        pickle.dump(pipeline.named_steps['standardize'], open(f'{folder}/standardize.pkl', 'wb'))    
+        pipeline.named_steps['estimator'].model.save(f'{folder}/estimator.h5')
 
-    def load_model(self, path):
-        # load the model from disk
-        return load(path)
+    def load_model(self, folder='pcr_model'):
+        standardize = pickle.load(open(f'{folder}/standardize.pkl','rb'))    
+        build_model = lambda: x
+        regressor = KerasRegressor(build_fn=build_model, epochs=1, batch_size=10, verbose=0)
+        regressor.model = load_model(f'{folder}/estimator.h5')
+        return Pipeline([('standardize', standardize), ('estimator', regressor)])
 
+    
 if __name__ == "__main__":
     learning = MachineLearning()
-    regressor = learning.train_model(train_path="train/pcr_training_set.csv")
-    score = learning.test_model(regressor, test_path="test/pcr_testing_set.csv", acc_win=0.25)
-    print(score)
+    pipeline = learning.train_model(train_path="train/pcr_training_set.csv")
+    score = learning.test_model(pipeline, test_path="test/pcr_testing_set.csv", acc_win=0.1)
+    print("Accuracy = {score:.2f}%")
+    
+    learning.save_model(pipeline)
+    pipeline = learning.load_model()
+    
+    
