@@ -5,7 +5,9 @@ from random import randint
 from random import random
 from protocol import Protocol
 from peltier import Peltier
+from neural_network import MachineLearning
 import joblib
+
 
 class PopulationManager:
     def __init__(self, pop_size=100, max_generation=50, mutation_chance=0.01, mutation_limit=0.20):        
@@ -28,7 +30,7 @@ class PopulationManager:
         return population
     
     def load_model(self, path):
-        return joblib.load(path)
+        return MachineLearning.load_model(path)
 
     def init_environment(self, pcr_model, block_temp=60, amb_temp=25, update_period=0.05, sample_volume=10):        
         pcr_machine = PCR_Machine(  pcr_model=pcr_model,                                    
@@ -282,7 +284,7 @@ class PopulationManager:
         creature.blend_in(protocol.tbc_controller)
         protocol.run(record_path=filepath, record_mode='a')  
 
-    def run(self, pcr_model_path="hybrid_pcr_model.ml", record_path=None, warm_up=True, stagnant_period=None):
+    def run(self, pcr_model_path="pcr_model", record_path=None, warm_up=True, stagnant_period=None):
         population = []
         if warm_up:
             best_creature = self.create_genius()
