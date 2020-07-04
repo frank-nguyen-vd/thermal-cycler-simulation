@@ -35,8 +35,7 @@ jobs:
       run: |
         pytest
 
-  build_image:
-    needs: [lint]
+  build_image:    
     runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v1
